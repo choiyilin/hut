@@ -1,0 +1,373 @@
+/* ── Keyframes (must live here — CSS Modules scope animation names locally) ─ */
+@keyframes riseIn {
+  from {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes lineBreath {
+  0%,
+  100% {
+    opacity: 0.35;
+    transform: scaleY(0.75) translateY(-6px);
+  }
+  55% {
+    opacity: 0.8;
+    transform: scaleY(1) translateY(0);
+  }
+}
+
+/* ── Landing page styles ─────────────────────────────────────────────────── */
+:root {
+  --gold: #c9a96e;
+  --white: #ffffff;
+  --nav-h: 76px;
+}
+
+/* ── Overlay ──────────────────────────────────────────────────────────────── */
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 3;
+  background:
+    radial-gradient(
+      ellipse 110% 90% at 50% 44%,
+      rgba(0, 0, 0, 0.1) 0%,
+      rgba(0, 0, 0, 0.52) 100%
+    ),
+    linear-gradient(
+      to bottom,
+      rgba(0, 0, 0, 0.28) 0%,
+      rgba(0, 0, 0, 0.28) 100%
+    );
+  pointer-events: none;
+}
+
+/* ── Nav ──────────────────────────────────────────────────────────────────── */
+.header {
+  position: fixed;
+  inset: 0 0 auto;
+  z-index: 40;
+  height: var(--nav-h);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 0 52px;
+  background: rgba(6, 6, 6, 0.12);
+  backdrop-filter: blur(18px) saturate(160%);
+  -webkit-backdrop-filter: blur(18px) saturate(160%);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+/* Logo — keeps the serif, not touched */
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-family: var(--font-jakarta-face), "Plus Jakarta Sans", sans-serif;
+  font-weight: 800;
+  font-size: 27px;
+  letter-spacing: 0.18em;
+  color: var(--white);
+  text-decoration: none;
+  text-transform: uppercase;
+  flex-shrink: 0;
+}
+
+.logoDot {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--gold);
+  position: relative;
+  top: -5px;
+  margin-left: 1px;
+}
+
+.navList {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.navList a {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 15px;
+  border-radius: 8px;
+  font-family: var(--font-jakarta-face), "Plus Jakarta Sans", sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.85);
+  text-decoration: none;
+  transition:
+    color 0.2s ease,
+    background 0.2s ease;
+}
+
+.navList a i {
+  font-size: 9px;
+  opacity: 0.55;
+  transition:
+    opacity 0.2s,
+    transform 0.25s;
+}
+
+.navList a:hover {
+  color: var(--white);
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.navList a:hover i {
+  opacity: 1;
+  transform: rotate(45deg);
+}
+
+/* Solid white button — bold, tactile */
+.btnAuth {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 22px;
+  border-radius: 50px;
+  background: rgba(255, 255, 255, 0.95);
+  border: none;
+  color: #111;
+  font-family: var(--font-jakarta-face), "Plus Jakarta Sans", sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background 0.2s ease;
+  white-space: nowrap;
+}
+
+.btnAuth i {
+  font-size: 11px;
+}
+
+.btnAuth:hover {
+  background: #fff;
+}
+
+/* ── Hero ─────────────────────────────────────────────────────────────────── */
+.hero {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: var(--nav-h) 24px 0;
+}
+
+/* Eyebrow — simpler, less precious */
+.eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 14px;
+  font-family: var(--font-jakarta-face), "Plus Jakarta Sans", sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.8);
+  margin-bottom: 20px;
+  opacity: 0;
+  animation: riseIn 0.8s cubic-bezier(0.22, 1, 0.36, 1) 0.15s both;
+}
+
+.eyebrow::before,
+.eyebrow::after {
+  content: "";
+  display: block;
+  width: 28px;
+  height: 1.5px;
+  background: rgba(255, 255, 255, 0.4);
+}
+
+/* Main heading — heavy, punchy, no serif */
+.heroH1 {
+  font-family: var(--font-jakarta-face), "Plus Jakarta Sans", sans-serif;
+  font-size: clamp(44px, 7.5vw, 92px);
+  font-weight: 800;
+  line-height: 1.0;
+  letter-spacing: -0.03em;
+  color: var(--white);
+  margin-bottom: 44px;
+  max-width: 900px;
+  opacity: 0;
+  animation: riseIn 0.8s cubic-bezier(0.22, 1, 0.36, 1) 0.32s both;
+}
+
+/* ── Search pill ──────────────────────────────────────────────────────────── */
+.searchWrap {
+  width: 100%;
+  max-width: 680px;
+  opacity: 0;
+  animation: riseIn 0.8s cubic-bezier(0.22, 1, 0.36, 1) 0.5s both;
+}
+
+.searchPill {
+  display: flex;
+  align-items: center;
+  height: 64px;
+  background: rgba(255, 255, 255, 0.94);
+  border-radius: 50px;
+  padding: 0 8px 0 30px;
+  border: none;
+  box-shadow:
+    0 24px 64px rgba(0, 0, 0, 0.28),
+    0 4px 16px rgba(0, 0, 0, 0.14);
+  transition: box-shadow 0.3s ease;
+}
+
+.searchPill:focus-within {
+  box-shadow:
+    0 24px 64px rgba(0, 0, 0, 0.34),
+    0 4px 16px rgba(0, 0, 0, 0.18),
+    0 0 0 3px rgba(255, 255, 255, 0.5);
+}
+
+.searchInput {
+  flex: 1;
+  min-width: 0;
+  border: none;
+  background: transparent;
+  outline: none;
+  font-family: var(--font-jakarta-face), "Plus Jakarta Sans", sans-serif;
+  font-size: 14.5px;
+  font-weight: 500;
+  color: #1a1a1a;
+}
+
+.searchInput::placeholder {
+  color: #9a9a9a;
+  font-weight: 400;
+}
+
+.searchBtn {
+  flex-shrink: 0;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: #111;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--white);
+  font-size: 15px;
+  transition:
+    background 0.2s ease,
+    transform 0.15s ease;
+}
+
+.searchBtn:hover {
+  background: #333;
+  transform: scale(1.06);
+}
+
+/* ── Scroll cue ───────────────────────────────────────────────────────────── */
+.scrollCue {
+  position: fixed;
+  bottom: 38px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  opacity: 0;
+  animation: riseIn 1s ease 1s both;
+}
+
+.scrollCue span {
+  font-family: var(--font-jakarta-face), "Plus Jakarta Sans", sans-serif;
+  font-size: 9.5px;
+  font-weight: 600;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.42);
+}
+
+.scrollLine {
+  width: 1px;
+  height: 40px;
+  background: linear-gradient(
+    to bottom,
+    rgba(255, 255, 255, 0.42) 0%,
+    transparent 100%
+  );
+  animation: lineBreath 2.6s ease-in-out infinite;
+}
+
+/* ── Responsive ───────────────────────────────────────────────────────────── */
+@media (max-width: 880px) {
+  .header {
+    padding: 0 28px;
+  }
+  .navList {
+    display: none;
+  }
+}
+
+@media (max-width: 600px) {
+  :root {
+    --nav-h: 62px;
+  }
+  .header {
+    padding: 0 20px;
+  }
+  .logo {
+    font-size: 22px;
+    letter-spacing: 0.14em;
+  }
+  .btnAuth {
+    padding: 8px 16px;
+    font-size: 12px;
+  }
+  .eyebrow {
+    font-size: 10px;
+    letter-spacing: 0.07em;
+    margin-bottom: 16px;
+  }
+  .eyebrow::before,
+  .eyebrow::after {
+    width: 18px;
+  }
+  .heroH1 {
+    margin-bottom: 32px;
+  }
+  .searchPill {
+    height: 56px;
+    padding: 0 6px 0 22px;
+  }
+  .searchInput {
+    font-size: 13px;
+  }
+  .searchBtn {
+    width: 44px;
+    height: 44px;
+    font-size: 13px;
+  }
+  .scrollCue {
+    bottom: 24px;
+  }
+}

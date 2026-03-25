@@ -1,0 +1,20 @@
+@import "tailwindcss";
+
+/* ── Tailwind v4 theme extension ─────────────────────────────────────────── */
+@theme inline {
+  /* Brand colors — gold retained for logo dot + Featured badge only */
+  --color-gold: #c9a96e;
+  --color-gold-light: #d4b87d;
+  --color-cream: #f0e9dc;
+
+  /* Primary UI font: Plus Jakarta Sans (geometric, bold, approachable)
+     --font-playfair kept for the logo Tailwind utility only.             */
+  --font-sans: var(--font-jakarta-face), "Plus Jakarta Sans", system-ui, sans-serif;
+  --font-playfair: var(--font-playfair-face), "Playfair Display", Georgia, serif;
+}
+
+/* ── Global base ─────────────────────────────────────────────────────────── */
+* {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
