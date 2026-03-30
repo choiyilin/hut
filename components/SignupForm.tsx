@@ -4,7 +4,10 @@ import Link from "next/link"
 import { useState } from "react"
 import { createClient } from "@/lib/supabase/client"
 
+type Role = "renter" | "realtor"
+
 export function SignupForm() {
+  const [role, setRole] = useState<Role>("renter")
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [confirm, setConfirm] = useState("")
@@ -23,7 +26,11 @@ export function SignupForm() {
 
     setLoading(true)
     const supabase = createClient()
-    const { error } = await supabase.auth.signUp({ email, password })
+    const { error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: { data: { role } },
+    })
 
     if (error) {
       setError(error.message)
@@ -43,6 +50,9 @@ export function SignupForm() {
           <p className="text-gray-500 text-sm">
             We sent a confirmation link to <strong>{email}</strong>. Click the link to activate your account.
           </p>
+          {role === "realtor" && (
+            <p className="mt-3 text-sm font-semibold text-[#c9a96e]">You signed up as a Realtor.</p>
+          )}
           <Link href="/login" className="mt-6 inline-block text-sm text-[#c9a96e] font-semibold hover:underline">
             Back to sign in
           </Link>
@@ -58,7 +68,16 @@ export function SignupForm() {
           <Link href="/" className="text-2xl font-extrabold tracking-[0.18em] uppercase text-gray-900">
             HUT
           </Link>
-          <p className="mt-2 text-gray-500 text-sm">Create your account</p>
+          {role === "realtor" ? (
+            <div className="mt-3 flex items-center justify-center gap-2">
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#c9a96e]/10 text-[#c9a96e] text-xs font-bold uppercase tracking-wider">
+                <i className="fa-solid fa-star text-[10px]" />
+                Realtor Portal
+              </span>
+            </div>
+          ) : (
+            <p className="mt-2 text-gray-500 text-sm">Create your account</p>
+          )}
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-5">
@@ -127,6 +146,26 @@ export function SignupForm() {
             Sign in
           </Link>
         </p>
+
+        <div className="mt-4 text-center">
+          {role === "realtor" ? (
+            <button
+              type="button"
+              onClick={() => setRole("renter")}
+              className="text-xs text-gray-400 hover:text-gray-600 transition-colors"
+            >
+              ← Back to regular sign up
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={() => setRole("realtor")}
+              className="text-xs text-gray-400 hover:text-gray-600 transition-colors"
+            >
+              I&apos;m a realtor
+            </button>
+          )}
+        </div>
       </div>
     </div>
   )

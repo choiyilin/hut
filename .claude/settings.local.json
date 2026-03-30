@@ -1,0 +1,31 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(open:*)",
+      "Bash(test:*)",
+      "Bash(printf 'y\\\\n' | npx create-next-app@latest . --typescript --tailwind --eslint --app --no-src-dir --import-alias \"@/*\" --no-turbopack 2>&1)",
+      "Bash(npx create-next-app@latest:*)",
+      "Bash(printf 'N\\\\n' | npx create-next-app@latest /tmp/hut-next --typescript --tailwind --eslint --app --no-src-dir --import-alias \"@/*\" --no-turbopack 2>&1)",
+      "Bash(npx tsc:*)",
+      "Bash(npm run:*)",
+      "Bash(sleep 4 && curl -s -o /dev/null -w \"%{http_code}\" http://localhost:3000 2>&1)",
+      "Bash(kill 92538:*)",
+      "Bash(sleep 1:*)",
+      "Bash(tree:*)",
+      "Bash(npm install:*)",
+      "Bash(tail:*)",
+      "Bash(ls:*)",
+      "Bash(git init && git remote add origin https://github.com/choiyilin/hut.git 2>&1)",
+      "Bash(git add . && git status 2>&1)",
+      "Bash(git rm:*)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)",
+      "Bash(which psql:*)",
+      "Bash(curl:*)",
+      "Bash(lsof:*)",
+      "Bash(echo:*)",
+      "Bash(echo === Cleanup: delete remaining test listing ===:*)",
+      "Bash(ps:*)"
+    ]
+  }
+}

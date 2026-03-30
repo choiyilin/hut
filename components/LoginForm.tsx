@@ -5,8 +5,11 @@ import { useRouter } from "next/navigation"
 import { useState } from "react"
 import { createClient } from "@/lib/supabase/client"
 
+type Role = "renter" | "realtor"
+
 export function LoginForm() {
   const router = useRouter()
+  const [role, setRole] = useState<Role>("renter")
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [error, setError] = useState<string | null>(null)
@@ -18,7 +21,7 @@ export function LoginForm() {
     setLoading(true)
 
     const supabase = createClient()
-    const { error } = await supabase.auth.signInWithPassword({ email, password })
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password })
 
     if (error) {
       setError(error.message)
@@ -26,7 +29,8 @@ export function LoginForm() {
       return
     }
 
-    router.push("/listings")
+    const userRole = data.user?.user_metadata?.role
+    router.push(userRole === "realtor" ? "/profile" : "/listings")
     router.refresh()
   }
 
@@ -37,7 +41,16 @@ export function LoginForm() {
           <Link href="/" className="text-2xl font-extrabold tracking-[0.18em] uppercase text-gray-900">
             HUT
           </Link>
-          <p className="mt-2 text-gray-500 text-sm">Sign in to your account</p>
+          {role === "realtor" ? (
+            <div className="mt-3 flex items-center justify-center gap-2">
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#c9a96e]/10 text-[#c9a96e] text-xs font-bold uppercase tracking-wider">
+                <i className="fa-solid fa-star text-[10px]" />
+                Realtor Portal
+              </span>
+            </div>
+          ) : (
+            <p className="mt-2 text-gray-500 text-sm">Sign in to your account</p>
+          )}
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-5">
@@ -90,6 +103,26 @@ export function LoginForm() {
             Create one
           </Link>
         </p>
+
+        <div className="mt-4 text-center">
+          {role === "realtor" ? (
+            <button
+              type="button"
+              onClick={() => setRole("renter")}
+              className="text-xs text-gray-400 hover:text-gray-600 transition-colors"
+            >
+              ← Back to regular sign in
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={() => setRole("realtor")}
+              className="text-xs text-gray-400 hover:text-gray-600 transition-colors"
+            >
+              I&apos;m a realtor
+            </button>
+          )}
+        </div>
       </div>
     </div>
   )
