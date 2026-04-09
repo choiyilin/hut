@@ -294,11 +294,13 @@ export function AddListingForm() {
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
 
-  // Auth check
+  // Auth check — use getSession() (reads cached session) so user_metadata.role
+  // is always present immediately after sign-up, unlike getUser() which makes
+  // a network call that can return stale metadata on freshly-created accounts.
   useEffect(() => {
     const supabase = createClient()
-    supabase.auth.getUser().then(({ data: { user } }) => {
-      if (!user || user.user_metadata?.role !== "realtor") {
+    supabase.auth.getUser().then(({ data: { user }, error }) => {
+      if (error || !user || user.user_metadata?.role !== "realtor") {
         router.replace("/login")
         return
       }

@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import { useState } from "react"
 import { createClient } from "@/lib/supabase/client"
 
@@ -9,6 +9,8 @@ type Role = "renter" | "realtor"
 
 export function LoginForm() {
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const needsConfirmation = searchParams.get("confirmed") === "false"
   const [role, setRole] = useState<Role>("renter")
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
@@ -30,6 +32,15 @@ export function LoginForm() {
     }
 
     const userRole = data.user?.user_metadata?.role
+
+    // If the user picked "I'm a realtor" in the UI but this account isn't a
+    // realtor account, tell them — don't silently redirect to the renter flow.
+    if (role === "realtor" && userRole !== "realtor") {
+      setError("This account is not registered as a realtor. Please sign up for a realtor account.")
+      setLoading(false)
+      return
+    }
+
     router.push(userRole === "realtor" ? "/profile" : "/listings")
     router.refresh()
   }
@@ -52,6 +63,12 @@ export function LoginForm() {
             <p className="mt-2 text-gray-500 text-sm">Sign in to your account</p>
           )}
         </div>
+
+        {needsConfirmation && (
+          <p className="mb-5 text-sm text-amber-700 bg-amber-50 rounded-lg px-4 py-2.5">
+            Check your email for a confirmation link, then sign in.
+          </p>
+        )}
 
         <form onSubmit={handleSubmit} className="space-y-5">
           <div>
@@ -98,10 +115,21 @@ export function LoginForm() {
         </form>
 
         <p className="mt-6 text-center text-sm text-gray-500">
-          Don&apos;t have an account?{" "}
-          <Link href="/signup" className="text-[#c9a96e] font-semibold hover:underline">
-            Create one
-          </Link>
+          {role === "realtor" ? (
+            <>
+              No realtor account?{" "}
+              <Link href="/signup?realtor=true" className="text-[#c9a96e] font-semibold hover:underline">
+                Sign up as a realtor
+              </Link>
+            </>
+          ) : (
+            <>
+              Don&apos;t have an account?{" "}
+              <Link href="/signup" className="text-[#c9a96e] font-semibold hover:underline">
+                Create one
+              </Link>
+            </>
+          )}
         </p>
 
         <div className="mt-4 text-center">

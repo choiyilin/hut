@@ -2,17 +2,19 @@
 
 import Link from "next/link"
 import { useState } from "react"
+import { useRouter, useSearchParams } from "next/navigation"
 import { createClient } from "@/lib/supabase/client"
 
 type Role = "renter" | "realtor"
 
 export function SignupForm() {
-  const [role, setRole] = useState<Role>("renter")
+  const router = useRouter()
+  const searchParams = useSearchParams()
+  const [role, setRole] = useState<Role>(searchParams.get("realtor") === "true" ? "realtor" : "renter")
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [confirm, setConfirm] = useState("")
   const [error, setError] = useState<string | null>(null)
-  const [submitted, setSubmitted] = useState(false)
   const [loading, setLoading] = useState(false)
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -26,7 +28,7 @@ export function SignupForm() {
 
     setLoading(true)
     const supabase = createClient()
-    const { error } = await supabase.auth.signUp({
+    const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: { data: { role } },
@@ -38,27 +40,15 @@ export function SignupForm() {
       return
     }
 
-    setSubmitted(true)
-  }
+    // When email confirmation is disabled in Supabase, signUp returns a session immediately.
+    if (data.session) {
+      router.push(role === "realtor" ? "/profile" : "/listings")
+      router.refresh()
+      return
+    }
 
-  if (submitted) {
-    return (
-      <div className="min-h-screen bg-[#f0e9dc] flex items-center justify-center px-4">
-        <div className="w-full max-w-md bg-white rounded-2xl shadow-lg p-8 text-center">
-          <div className="mb-4 text-4xl">✉️</div>
-          <h2 className="text-xl font-bold text-gray-900 mb-2">Check your email</h2>
-          <p className="text-gray-500 text-sm">
-            We sent a confirmation link to <strong>{email}</strong>. Click the link to activate your account.
-          </p>
-          {role === "realtor" && (
-            <p className="mt-3 text-sm font-semibold text-[#c9a96e]">You signed up as a Realtor.</p>
-          )}
-          <Link href="/login" className="mt-6 inline-block text-sm text-[#c9a96e] font-semibold hover:underline">
-            Back to sign in
-          </Link>
-        </div>
-      </div>
-    )
+    // Fallback: email confirmation is still enabled — direct user to login to confirm.
+    router.push("/login?confirmed=false")
   }
 
   return (

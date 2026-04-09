@@ -44,12 +44,12 @@ export function VideoStage() {
       }, 1150)
     }
 
-    // Boot
-    active.src = VIDEOS[idx]
-    active.load()
+    // Boot — only fetch the first video; preload standby only after it's playing
     active.play().catch(() => {})
-    standby.src = VIDEOS[(idx + 1) % VIDEOS.length]
-    standby.load()
+    active.addEventListener("playing", () => {
+      standby.src = VIDEOS[(idx + 1) % VIDEOS.length]
+      standby.load()
+    }, { once: true })
     attachEndListener()
   }, [])
 
@@ -57,9 +57,11 @@ export function VideoStage() {
     <div className="fixed inset-0 z-0">
       <video
         ref={vidARef}
+        src={VIDEOS[0]}
         autoPlay
         muted
         playsInline
+        preload="auto"
         className="absolute inset-0 w-full h-full object-cover transition-opacity duration-1000"
         style={{ opacity: 1, zIndex: 1 }}
       />

@@ -1,5 +1,6 @@
 import type { Metadata } from "next"
 import { Playfair_Display, Plus_Jakarta_Sans } from "next/font/google"
+import Script from "next/script"
 import { SavedProvider } from "@/contexts/SavedContext"
 import "./globals.css"
 
@@ -32,9 +33,12 @@ export default function RootLayout({
   return (
     <html lang="en">
       <head>
-        <link
-          rel="stylesheet"
-          href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
+        <Script
+          id="font-awesome"
+          strategy="afterInteractive"
+          dangerouslySetInnerHTML={{
+            __html: `var l=document.createElement('link');l.rel='stylesheet';l.href='https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css';document.head.appendChild(l);`,
+          }}
         />
       </head>
       <body className={`${playfair.variable} ${jakarta.variable} font-sans`}>

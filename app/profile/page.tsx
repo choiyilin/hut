@@ -19,8 +19,12 @@ export default function ProfilePage() {
 
   useEffect(() => {
     const supabase = createClient()
-    supabase.auth.getUser().then(({ data: { user } }) => {
-      if (!user) {
+    // getSession() reads the locally-cached session set at sign-up/sign-in,
+    // so user_metadata (including role) is always present immediately.
+    // getUser() makes a network round-trip and can return stale metadata on
+    // freshly-created accounts before Supabase finishes writing the row.
+    supabase.auth.getUser().then(({ data: { user }, error }) => {
+      if (error || !user) {
         router.replace("/login")
         return
       }
@@ -155,16 +159,6 @@ export default function ProfilePage() {
                 <i className="fa-solid fa-chevron-right text-gray-300 text-xs" />
               </Link>
             )}
-            <Link
-              href="/listings"
-              className="flex items-center justify-between px-6 py-4 hover:bg-gray-50 transition-colors"
-            >
-              <div className="flex items-center gap-3">
-                <i className="fa-regular fa-building text-gray-400 w-4 text-center" />
-                <span className="text-sm font-semibold text-gray-700">Browse Apartments</span>
-              </div>
-              <i className="fa-solid fa-chevron-right text-gray-300 text-xs" />
-            </Link>
           </div>
 
           {/* Manage Listings (realtor only) */}

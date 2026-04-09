@@ -9,17 +9,20 @@ import { useSaved } from "@/contexts/SavedContext"
 export function AppNav() {
   const router = useRouter()
   const [userEmail, setUserEmail] = useState<string | null>(null)
+  const [isRealtor, setIsRealtor] = useState(false)
   const { savedIds } = useSaved()
 
   useEffect(() => {
     const supabase = createClient()
 
-    supabase.auth.getUser().then(({ data: { user } }) => {
-      setUserEmail(user?.email ?? null)
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUserEmail(session?.user?.email ?? null)
+      setIsRealtor(session?.user?.user_metadata?.role === "realtor")
     })
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setUserEmail(session?.user?.email ?? null)
+      setIsRealtor(session?.user?.user_metadata?.role === "realtor")
     })
 
     return () => subscription.unsubscribe()
@@ -43,7 +46,7 @@ export function AppNav() {
         </Link>
 
         <nav className="hidden md:flex items-center gap-0.5">
-          {["Rent", "Buy", "List", "Agents", "Featured"].map((item) => (
+          {["Rent", "Buy", "Agents", "Featured"].map((item) => (
             <a
               key={item}
               href="#"
@@ -52,6 +55,16 @@ export function AppNav() {
               {item}
             </a>
           ))}
+          <Link
+            href="/listings/new"
+            className={
+              isRealtor
+                ? "px-3 py-2 text-sm font-bold text-[#c9a96e] hover:text-[#b8935a] hover:bg-[#c9a96e]/5 rounded-lg transition-colors"
+                : "px-3 py-2 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-lg transition-colors"
+            }
+          >
+            List
+          </Link>
         </nav>
 
         <div className="hidden sm:flex items-center gap-2 flex-shrink-0">

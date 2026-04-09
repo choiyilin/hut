@@ -25,7 +25,11 @@
       "Bash(lsof:*)",
       "Bash(echo:*)",
       "Bash(echo === Cleanup: delete remaining test listing ===:*)",
-      "Bash(ps:*)"
+      "Bash(ps:*)",
+      "Bash(ffmpeg -version)",
+      "Bash(kill 79866:*)",
+      "Bash(awk '{print $2}')",
+      "Bash(xargs kill:*)"
     ]
   }
 }

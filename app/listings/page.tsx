@@ -12,15 +12,22 @@ interface Props {
 export default async function ListingsPage({ searchParams }: Props) {
   const { q } = await searchParams
 
-  const supabase = await createClient()
-  const { data: realtorRows } = await supabase
-    .from("realtor_listings")
-    .select("*")
-    .order("date_posted", { ascending: false })
+  let realtorRows: RealtorListingRow[] = []
+  try {
+    const supabase = await createClient()
+    const { data } = await supabase
+      .from("realtor_listings")
+      .select("*")
+      .order("date_posted", { ascending: false })
+      .abortSignal(AbortSignal.timeout(5000))
+    realtorRows = (data ?? []) as RealtorListingRow[]
+  } catch {
+    // Supabase unreachable — show static listings only
+  }
 
   const allListings: Listing[] = [
     ...(listingsData as Listing[]),
-    ...(realtorRows ?? []).map((r) => realtorRowToListing(r as RealtorListingRow)),
+    ...realtorRows.map((r) => realtorRowToListing(r)),
   ]
 
   return (
