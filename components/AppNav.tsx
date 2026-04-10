@@ -9,7 +9,6 @@ import { useSaved } from "@/contexts/SavedContext"
 export function AppNav() {
   const router = useRouter()
   const [userEmail, setUserEmail] = useState<string | null>(null)
-  const [isRealtor, setIsRealtor] = useState(false)
   const { savedIds } = useSaved()
 
   useEffect(() => {
@@ -17,12 +16,10 @@ export function AppNav() {
 
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUserEmail(session?.user?.email ?? null)
-      setIsRealtor(session?.user?.user_metadata?.role === "realtor")
     })
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setUserEmail(session?.user?.email ?? null)
-      setIsRealtor(session?.user?.user_metadata?.role === "realtor")
     })
 
     return () => subscription.unsubscribe()
@@ -37,7 +34,7 @@ export function AppNav() {
 
   return (
     <header className="sticky top-0 z-30 bg-white border-b border-gray-100 shadow-sm">
-      <div className="max-w-screen-xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-4">
+      <div className="px-7 sm:px-[52px] h-[76px] flex items-center justify-between gap-4">
         <Link
           href="/"
           className="text-[1.6rem] font-extrabold tracking-[0.18em] uppercase text-gray-900 flex items-center flex-shrink-0 select-none"
@@ -46,25 +43,18 @@ export function AppNav() {
         </Link>
 
         <nav className="hidden md:flex items-center gap-0.5">
-          {["Rent", "Buy", "Agents", "Featured"].map((item) => (
-            <a
-              key={item}
-              href="#"
-              className="px-3 py-2 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-lg transition-colors"
-            >
-              {item}
-            </a>
-          ))}
-          <Link
-            href="/listings/new"
-            className={
-              isRealtor
-                ? "px-3 py-2 text-sm font-bold text-[#c9a96e] hover:text-[#b8935a] hover:bg-[#c9a96e]/5 rounded-lg transition-colors"
-                : "px-3 py-2 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-lg transition-colors"
-            }
+          <button
+            onClick={() => router.push(`/listings?type=rent&_r=${Date.now()}`)}
+            className="px-3 py-2 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-lg transition-colors"
           >
-            List
-          </Link>
+            Rent
+          </button>
+          <button
+            onClick={() => router.push(`/listings?type=sale&_r=${Date.now()}`)}
+            className="px-3 py-2 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-lg transition-colors"
+          >
+            Buy
+          </button>
         </nav>
 
         <div className="hidden sm:flex items-center gap-2 flex-shrink-0">

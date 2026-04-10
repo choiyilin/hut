@@ -6,11 +6,12 @@ import { createClient } from "@/lib/supabase/server"
 
 // In Next.js 16, searchParams is a Promise
 interface Props {
-  searchParams: Promise<{ q?: string }>
+  searchParams: Promise<{ q?: string; type?: string; _r?: string }>
 }
 
 export default async function ListingsPage({ searchParams }: Props) {
-  const { q } = await searchParams
+  const { q, type, _r } = await searchParams
+  const listingType: "rent" | "sale" = type === "sale" ? "sale" : "rent"
 
   let realtorRows: RealtorListingRow[] = []
   try {
@@ -18,6 +19,7 @@ export default async function ListingsPage({ searchParams }: Props) {
     const { data } = await supabase
       .from("realtor_listings")
       .select("*")
+      .in("status", ["active", "pending"])
       .order("date_posted", { ascending: false })
       .abortSignal(AbortSignal.timeout(5000))
     realtorRows = (data ?? []) as RealtorListingRow[]
@@ -32,8 +34,10 @@ export default async function ListingsPage({ searchParams }: Props) {
 
   return (
     <ListingsClient
+      key={_r ?? listingType}
       initialListings={allListings}
       initialQuery={q ?? ""}
+      initialListingType={listingType}
     />
   )
 }

@@ -19,14 +19,14 @@ export default function HomePage() {
         <nav aria-label="Main navigation">
           <ul className={styles.navList}>
             <li>
-              <Link href="/listings">
+              <Link href="/listings?type=rent">
                 Rent <i className="fa-solid fa-plus" />
               </Link>
             </li>
             <li>
-              <a href="#">
+              <Link href="/listings?type=sale">
                 Buy <i className="fa-solid fa-plus" />
-              </a>
+              </Link>
             </li>
             <li>
               <a href="#">
@@ -56,6 +56,7 @@ export default function HomePage() {
 
         <div className={styles.searchWrap}>
           <form method="GET" action="/listings" className={styles.searchPill}>
+            <input type="hidden" name="type" value="rent" />
             <input
               type="text"
               name="q"

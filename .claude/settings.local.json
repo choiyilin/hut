@@ -29,7 +29,13 @@
       "Bash(ffmpeg -version)",
       "Bash(kill 79866:*)",
       "Bash(awk '{print $2}')",
-      "Bash(xargs kill:*)"
+      "Bash(xargs kill:*)",
+      "Bash(python3 -c ':*)",
+      "Bash(python3 -c \" import json,sys d=json.load\\(sys.stdin\\) print\\(len\\(d['features']\\), 'residential features'\\) \")",
+      "Bash(python3 -c \"import json,sys; d=json.load\\(sys.stdin\\); print\\(len\\(d['features']\\), 'features'\\)\")",
+      "Bash(node:*)",
+      "Bash(grep -E \"\\\\.\\(ts|tsx|json\\)$\")",
+      "Bash(grep:*)"
     ]
   }
 }

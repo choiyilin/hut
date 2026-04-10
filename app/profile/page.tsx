@@ -54,6 +54,18 @@ export default function ProfilePage() {
     setRealtorListings((prev) => prev.filter((l) => l.id !== id))
   }
 
+  const handleDelistToggle = async (listing: RealtorListingRow) => {
+    const nextStatus = listing.status === "off-market" ? "active" : "off-market"
+    const supabase = createClient()
+    await supabase
+      .from("realtor_listings")
+      .update({ status: nextStatus })
+      .eq("id", listing.id)
+    setRealtorListings((prev) =>
+      prev.map((l) => (l.id === listing.id ? { ...l, status: nextStatus } : l))
+    )
+  }
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50">
@@ -111,12 +123,16 @@ export default function ProfilePage() {
               {isRealtor ? (
                 <>
                   <div className="bg-gray-50 rounded-xl p-4">
-                    <p className="text-2xl font-extrabold text-gray-900">{realtorListings.length}</p>
-                    <p className="text-xs font-semibold text-gray-400 mt-0.5 uppercase tracking-wide">Listings</p>
+                    <p className="text-2xl font-extrabold text-gray-900">
+                      {realtorListings.filter((l) => l.status !== "draft").length}
+                    </p>
+                    <p className="text-xs font-semibold text-gray-400 mt-0.5 uppercase tracking-wide">Active</p>
                   </div>
                   <div className="bg-gray-50 rounded-xl p-4">
-                    <p className="text-2xl font-extrabold text-gray-900">{realtorListings.length}</p>
-                    <p className="text-xs font-semibold text-gray-400 mt-0.5 uppercase tracking-wide">Listings Posted</p>
+                    <p className="text-2xl font-extrabold text-gray-900">
+                      {realtorListings.filter((l) => l.status === "draft").length}
+                    </p>
+                    <p className="text-xs font-semibold text-gray-400 mt-0.5 uppercase tracking-wide">Drafts</p>
                   </div>
                 </>
               ) : (
@@ -162,46 +178,114 @@ export default function ProfilePage() {
           </div>
 
           {/* Manage Listings (realtor only) */}
-          {isRealtor && (
-            <div className="mt-6 bg-white rounded-2xl border border-gray-100 shadow-sm">
-              <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
-                <span className="text-sm font-bold text-gray-900">Manage Listings</span>
-                <Link
-                  href="/listings/new"
-                  className="text-xs font-bold text-[#c9a96e] hover:underline flex items-center gap-1"
-                >
-                  <i className="fa-solid fa-plus text-[10px]" />
-                  Add new
-                </Link>
-              </div>
+          {isRealtor && (() => {
+            const published = realtorListings.filter((l) => l.status !== "draft")
+            const drafts = realtorListings.filter((l) => l.status === "draft")
+            return (
+              <>
+                {/* Published listings */}
+                <div className="mt-6 bg-white rounded-2xl border border-gray-100 shadow-sm">
+                  <div className="px-6 py-4 border-b border-gray-100">
+                    <span className="text-sm font-bold text-gray-900">Manage Listings</span>
+                  </div>
 
-              {realtorLoading ? (
-                <p className="px-6 py-5 text-sm text-gray-400">Loading…</p>
-              ) : realtorListings.length === 0 ? (
-                <p className="px-6 py-5 text-sm text-gray-400">No listings yet.</p>
-              ) : (
-                <ul className="divide-y divide-gray-100">
-                  {realtorListings.map((listing) => (
-                    <li key={listing.id} className="flex items-center justify-between px-6 py-4 gap-3">
-                      <div className="min-w-0">
-                        <p className="text-sm font-semibold text-gray-900 truncate">{listing.title}</p>
-                        <p className="text-xs text-gray-400 mt-0.5">
-                          ${listing.price.toLocaleString()}/mo · {listing.neighborhood}
-                        </p>
-                      </div>
-                      <button
-                        onClick={() => handleDeleteListing(listing.id)}
-                        className="flex-shrink-0 w-8 h-8 flex items-center justify-center rounded-full text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors"
-                        aria-label="Delete listing"
-                      >
-                        <i className="fa-solid fa-trash text-sm" />
-                      </button>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </div>
-          )}
+                  {realtorLoading ? (
+                    <p className="px-6 py-5 text-sm text-gray-400">Loading…</p>
+                  ) : published.length === 0 ? (
+                    <p className="px-6 py-5 text-sm text-gray-400">No listings yet.</p>
+                  ) : (
+                    <ul className="divide-y divide-gray-100">
+                      {published.map((listing) => (
+                        <li key={listing.id} className="flex items-center justify-between px-6 py-4 gap-3">
+                          <div className="min-w-0 flex-1">
+                            <p className="text-sm font-semibold text-gray-900 truncate">{listing.title}</p>
+                            <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+                              <p className="text-xs text-gray-400">
+                                ${listing.price.toLocaleString()}/mo · {listing.neighborhood}
+                              </p>
+                              {listing.status === "off-market" && (
+                                <span className="text-xs font-semibold text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full">
+                                  Delisted
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-1 flex-shrink-0">
+                            <Link
+                              href={`/listings/${listing.id}/edit`}
+                              className="w-8 h-8 flex items-center justify-center rounded-full text-gray-400 hover:text-[#c9a96e] hover:bg-[#c9a96e]/10 transition-colors"
+                              aria-label="Edit listing"
+                            >
+                              <i className="fa-solid fa-pen text-xs" />
+                            </Link>
+                            <button
+                              onClick={() => handleDelistToggle(listing)}
+                              className={`w-8 h-8 flex items-center justify-center rounded-full transition-colors ${
+                                listing.status === "off-market"
+                                  ? "text-green-500 hover:bg-green-50"
+                                  : "text-gray-400 hover:text-orange-500 hover:bg-orange-50"
+                              }`}
+                              aria-label={listing.status === "off-market" ? "Relist listing" : "Delist listing"}
+                              title={listing.status === "off-market" ? "Relist" : "Delist"}
+                            >
+                              <i className={`fa-solid ${listing.status === "off-market" ? "fa-eye" : "fa-eye-slash"} text-xs`} />
+                            </button>
+                            <button
+                              onClick={() => handleDeleteListing(listing.id)}
+                              className="w-8 h-8 flex items-center justify-center rounded-full text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors"
+                              aria-label="Delete listing"
+                            >
+                              <i className="fa-solid fa-trash text-xs" />
+                            </button>
+                          </div>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+
+                {/* Drafts */}
+                {(realtorLoading || drafts.length > 0) && (
+                  <div className="mt-4 bg-white rounded-2xl border border-gray-100 shadow-sm">
+                    <div className="px-6 py-4 border-b border-gray-100">
+                      <span className="text-sm font-bold text-gray-900">Drafts</span>
+                    </div>
+                    {realtorLoading ? (
+                      <p className="px-6 py-5 text-sm text-gray-400">Loading…</p>
+                    ) : (
+                      <ul className="divide-y divide-gray-100">
+                        {drafts.map((listing) => (
+                          <li key={listing.id} className="flex items-center justify-between px-6 py-4 gap-3">
+                            <div className="min-w-0 flex-1">
+                              <p className="text-sm font-semibold text-gray-900 truncate">
+                                {listing.title || "Untitled Draft"}
+                              </p>
+                              <p className="text-xs text-gray-400 mt-0.5">{listing.neighborhood}</p>
+                            </div>
+                            <div className="flex items-center gap-1 flex-shrink-0">
+                              <Link
+                                href={`/listings/${listing.id}/edit`}
+                                className="px-3 py-1.5 rounded-full text-xs font-bold text-[#c9a96e] border border-[#c9a96e]/30 hover:bg-[#c9a96e]/10 transition-colors"
+                              >
+                                Continue
+                              </Link>
+                              <button
+                                onClick={() => handleDeleteListing(listing.id)}
+                                className="w-8 h-8 flex items-center justify-center rounded-full text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors"
+                                aria-label="Delete draft"
+                              >
+                                <i className="fa-solid fa-trash text-xs" />
+                              </button>
+                            </div>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
+                )}
+              </>
+            )
+          })()}
         </div>
       </div>
     </div>

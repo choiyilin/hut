@@ -6,16 +6,15 @@ import { useEffect, useRef, useState } from "react"
 import { useRouter } from "next/navigation"
 import type { User } from "@supabase/supabase-js"
 import { createClient } from "@/lib/supabase/client"
-import { NEIGHBORHOODS } from "@/components/FilterSidebar"
+import { NYC_BOROUGHS } from "@/data/nyc-neighborhoods"
+import type { RealtorListingRow, OpenHouseSlot } from "@/types"
 
 // ── Local types ────────────────────────────────────────────────────────────────
-
-type OpenHouseSlot = { date: string; time: string; notes: string }
 
 type FormState = {
   listingType: "rent" | "sale"
   propertyType: "apartment" | "house" | "condo" | "townhouse" | "co-op" | "multi-family"
-  status: "active" | "pending" | "off-market"
+  status: "active" | "pending" | "off-market" | "draft"
   streetAddress: string
   unitNumber: string
   city: string
@@ -81,7 +80,7 @@ const INITIAL_FORM: FormState = {
   city: "New York",
   state: "NY",
   zip: "",
-  neighborhood: NEIGHBORHOODS[0],
+  neighborhood: "",
   title: "",
   titleIsManual: false,
   price: "",
@@ -157,6 +156,84 @@ function deriveAmenities(form: FormState): string[] {
   if (form.hasBalcony) derived.push("balcony")
   if (form.petPolicy !== "no-pets") derived.push("pets allowed")
   return [...new Set(derived)]
+}
+
+// ── Map a DB row back to FormState (for edit mode) ────────────────────────────
+
+function parseStreetAddress(row: RealtorListingRow): string {
+  let addr = row.address
+  const tail = [row.city, `${row.state ?? ""} ${row.zip ?? ""}`.trim()]
+    .filter(Boolean)
+    .join(", ")
+  if (tail && addr.endsWith(`, ${tail}`)) addr = addr.slice(0, addr.length - tail.length - 2)
+  if (row.unit_number) {
+    const unit = `, Apt ${row.unit_number}`
+    if (addr.endsWith(unit)) addr = addr.slice(0, addr.length - unit.length)
+  }
+  return addr.trim()
+}
+
+function rowToFormState(row: RealtorListingRow): FormState {
+  const hasHalf = (row.half_baths ?? 0) > 0
+  return {
+    listingType: (row.listing_type as FormState["listingType"]) ?? "rent",
+    propertyType: (row.property_type as FormState["propertyType"]) ?? "apartment",
+    status: (row.status as FormState["status"]) ?? "active",
+    streetAddress: parseStreetAddress(row),
+    unitNumber: row.unit_number ?? "",
+    city: row.city ?? "New York",
+    state: row.state ?? "NY",
+    zip: row.zip ?? "",
+    neighborhood: row.neighborhood,
+    title: row.title,
+    titleIsManual: true,
+    price: String(row.price),
+    securityDeposit: row.security_deposit ? String(row.security_deposit) : "",
+    hasBrokerFee: row.has_broker_fee,
+    brokerFeeAmount: row.broker_fee_amount ? String(row.broker_fee_amount) : "",
+    brokerFeePct: row.broker_fee_pct ? String(row.broker_fee_pct) : "",
+    hoaFees: row.hoa_fees ? String(row.hoa_fees) : "",
+    propertyTaxesYear: row.property_taxes_year ? String(row.property_taxes_year) : "",
+    beds: row.beds,
+    fullBaths: row.baths,
+    hasHalfBath: hasHalf,
+    sqft: String(row.sqft),
+    yearBuilt: row.year_built ? String(row.year_built) : "",
+    floorNumber: row.floor_number ? String(row.floor_number) : "",
+    totalFloors: row.total_floors ? String(row.total_floors) : "",
+    lotSize: row.lot_size ? String(row.lot_size) : "",
+    parkingType: (row.parking_type as FormState["parkingType"]) ?? "none",
+    parkingSpots: row.parking_spots ?? 0,
+    laundryType: (row.laundry_type as FormState["laundryType"]) ?? "none",
+    hasBalcony: row.has_balcony,
+    hasTerrace: row.has_terrace,
+    hasBackyard: row.has_backyard,
+    hasRoofDeck: row.has_roof_deck,
+    petPolicy: (row.pet_policy as FormState["petPolicy"]) ?? "no-pets",
+    isFurnished: row.is_furnished,
+    hasStorage: row.has_storage,
+    hasDoorman: row.has_doorman,
+    hasElevator: row.has_elevator,
+    hasGym: row.has_gym,
+    hasPool: row.has_pool,
+    hasRooftop: row.has_rooftop,
+    hasPackageRoom: row.has_package_room,
+    hasBikeRoom: row.has_bike_room,
+    hasEvCharging: row.has_ev_charging,
+    hasLiveInSuper: row.has_live_in_super,
+    isAccessible: row.is_accessible,
+    acType: (row.ac_type as FormState["acType"]) ?? "none",
+    heatType: (row.heat_type as FormState["heatType"]) ?? "",
+    utilitiesIncluded: row.utilities_included ?? [],
+    flooringType: row.flooring_type ?? "",
+    hasDishwasher: row.has_dishwasher,
+    hasMicrowave: row.has_microwave,
+    hasWasherDryer: row.has_washer_dryer,
+    description: row.description ?? "",
+    availableDate: row.available_date ?? "",
+    leaseTerms: row.lease_terms ?? [],
+    openHouseSlots: (row.open_house_slots as FormState["openHouseSlots"]) ?? [],
+  }
 }
 
 // ── Shared UI primitives ───────────────────────────────────────────────────────
@@ -271,16 +348,23 @@ function CheckboxField({
 
 // ── Main component ─────────────────────────────────────────────────────────────
 
-export function AddListingForm() {
+export function AddListingForm({ initialData }: { initialData?: RealtorListingRow }) {
+  const isEditMode = !!initialData
   const router = useRouter()
   const [user, setUser] = useState<User | null>(null)
   const [authLoading, setAuthLoading] = useState(true)
 
-  const [form, setForm] = useState<FormState>(INITIAL_FORM)
+  const [form, setForm] = useState<FormState>(
+    initialData ? rowToFormState(initialData) : INITIAL_FORM
+  )
   const setField = <K extends keyof FormState>(key: K, value: FormState[K]) =>
     setForm((prev) => ({ ...prev, [key]: value }))
 
   // Photo / media state
+  // existingPhotoUrls: already-uploaded URLs kept from the original listing (edit mode)
+  const [existingPhotoUrls, setExistingPhotoUrls] = useState<string[]>(
+    initialData?.photo_urls ?? []
+  )
   const [photoFiles, setPhotoFiles] = useState<File[]>([])
   const [previewUrls, setPreviewUrls] = useState<string[]>([])
   const [videoFile, setVideoFile] = useState<File | null>(null)
@@ -395,100 +479,81 @@ export function AddListingForm() {
     setField("openHouseSlots", form.openHouseSlots.filter((_, j) => j !== i))
   }
 
-  // ── Submit ─────────────────────────────────────────────────────────────────
+  // ── Shared upload + persist logic ─────────────────────────────────────────
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!user || isSubmitting.current) return
-    if (photoFiles.length === 0) {
-      setError("Please add at least one photo before posting.")
-      return
-    }
-    if (
-      form.floorNumber &&
-      form.totalFloors &&
-      Number(form.floorNumber) > Number(form.totalFloors)
-    ) {
-      setError("Floor number cannot exceed total floors.")
-      return
-    }
-    isSubmitting.current = true
-    setError(null)
-    setLoading(true)
-
-    try {
-      const supabase = createClient()
-
-      // Upload photos in parallel
-      const photoUrls = await Promise.all(
-        photoFiles.map(async (file, i) => {
-          const ext = file.name.split(".").pop() ?? "jpg"
-          const path = `${user.id}/${Date.now()}-${i}.${ext}`
-          const { error: uploadErr } = await supabase.storage
-            .from("listing-photos")
-            .upload(path, file, { upsert: true })
-          if (uploadErr) throw new Error(`Photo upload failed: ${uploadErr.message}`)
-          return supabase.storage.from("listing-photos").getPublicUrl(path).data.publicUrl
-        })
-      )
-
-      // Upload video
-      let videoUrl: string | null = null
-      if (videoFile) {
-        const ext = videoFile.name.split(".").pop() ?? "mp4"
-        const path = `${user.id}/${Date.now()}-video.${ext}`
+  const buildPayload = async (
+    supabase: ReturnType<typeof createClient>,
+    overrideStatus?: FormState["status"]
+  ) => {
+    const newPhotoUrls = await Promise.all(
+      photoFiles.map(async (file, i) => {
+        const ext = file.name.split(".").pop() ?? "jpg"
+        const path = `${user!.id}/${Date.now()}-${i}.${ext}`
         const { error: uploadErr } = await supabase.storage
-          .from("listing-videos")
-          .upload(path, videoFile, { upsert: true })
-        if (uploadErr) throw new Error(`Video upload failed: ${uploadErr.message}`)
-        videoUrl = supabase.storage.from("listing-videos").getPublicUrl(path).data.publicUrl
-      }
+          .from("listing-photos")
+          .upload(path, file, { upsert: true })
+        if (uploadErr) throw new Error(`Photo upload failed: ${uploadErr.message}`)
+        return supabase.storage.from("listing-photos").getPublicUrl(path).data.publicUrl
+      })
+    )
+    const allPhotoUrls = [...existingPhotoUrls, ...newPhotoUrls]
 
-      // Upload floor plan
-      let floorPlanUrl: string | null = null
-      if (floorPlanFile) {
-        const ext = floorPlanFile.name.split(".").pop() ?? "pdf"
-        const path = `${user.id}/${Date.now()}-floor-plan.${ext}`
-        const { error: uploadErr } = await supabase.storage
-          .from("listing-floor-plans")
-          .upload(path, floorPlanFile, { upsert: true })
-        if (uploadErr) throw new Error(`Floor plan upload failed: ${uploadErr.message}`)
-        floorPlanUrl = supabase.storage
-          .from("listing-floor-plans")
-          .getPublicUrl(path).data.publicUrl
-      }
+    let videoUrl: string | null = initialData?.video_url ?? null
+    if (videoFile) {
+      const ext = videoFile.name.split(".").pop() ?? "mp4"
+      const path = `${user!.id}/${Date.now()}-video.${ext}`
+      const { error: uploadErr } = await supabase.storage
+        .from("listing-videos")
+        .upload(path, videoFile, { upsert: true })
+      if (uploadErr) throw new Error(`Video upload failed: ${uploadErr.message}`)
+      videoUrl = supabase.storage.from("listing-videos").getPublicUrl(path).data.publicUrl
+    }
 
-      const amenities = deriveAmenities(form)
-      const addressParts = [
-        form.streetAddress,
-        form.unitNumber ? `Apt ${form.unitNumber}` : "",
-        form.city,
-        `${form.state} ${form.zip}`.trim(),
-      ].filter(Boolean)
-      const address = addressParts.join(", ")
-      const baths = form.fullBaths + (form.hasHalfBath ? 0.5 : 0)
+    let floorPlanUrl: string | null = initialData?.floor_plan_url ?? null
+    if (floorPlanFile) {
+      const ext = floorPlanFile.name.split(".").pop() ?? "pdf"
+      const path = `${user!.id}/${Date.now()}-floor-plan.${ext}`
+      const { error: uploadErr } = await supabase.storage
+        .from("listing-floor-plans")
+        .upload(path, floorPlanFile, { upsert: true })
+      if (uploadErr) throw new Error(`Floor plan upload failed: ${uploadErr.message}`)
+      floorPlanUrl = supabase.storage
+        .from("listing-floor-plans")
+        .getPublicUrl(path).data.publicUrl
+    }
 
-      const { error: insertErr } = await supabase.from("realtor_listings").insert({
-        user_id: user.id,
-        title: form.title || address,
+    const amenities = deriveAmenities(form)
+    const addressParts = [
+      form.streetAddress,
+      form.unitNumber ? `Apt ${form.unitNumber}` : "",
+      form.city,
+      `${form.state} ${form.zip}`.trim(),
+    ].filter(Boolean)
+    const address = addressParts.join(", ") || form.neighborhood
+    const baths = form.fullBaths + (form.hasHalfBath ? 0.5 : 0)
+    const effectiveStatus = overrideStatus ?? form.status
+
+    return {
+      fields: {
+        title: form.title || address || "Untitled Draft",
         listing_type: form.listingType,
         property_type: form.propertyType,
-        status: form.status,
-        price: Number(form.price),
+        status: effectiveStatus,
+        price: Number(form.price) || 0,
         beds: form.beds,
         baths,
         half_baths: form.hasHalfBath ? 1 : 0,
-        sqft: Number(form.sqft),
+        sqft: Number(form.sqft) || 0,
         address,
         unit_number: form.unitNumber || null,
         city: form.city,
         state: form.state,
         zip: form.zip || null,
         neighborhood: form.neighborhood,
-        lat: 0,
-        lng: 0,
-        photo_urls: photoUrls,
-        image_url: photoUrls[0],
+        lat: initialData?.lat ?? 0,
+        lng: initialData?.lng ?? 0,
+        photo_urls: allPhotoUrls,
+        image_url: allPhotoUrls[0] ?? "",
         video_url: videoUrl,
         floor_plan_url: floorPlanUrl,
         amenities,
@@ -533,9 +598,84 @@ export function AddListingForm() {
         available_date: form.availableDate || null,
         lease_terms: form.leaseTerms,
         open_house_slots: form.openHouseSlots,
-      })
+      },
+    }
+  }
 
-      if (insertErr) throw new Error(insertErr.message)
+  // ── Submit (publish / update) ──────────────────────────────────────────────
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!user || isSubmitting.current) return
+    const hasPhotos = existingPhotoUrls.length > 0 || photoFiles.length > 0
+    if (!hasPhotos) {
+      setError("Please add at least one photo before posting.")
+      return
+    }
+    if (
+      form.floorNumber &&
+      form.totalFloors &&
+      Number(form.floorNumber) > Number(form.totalFloors)
+    ) {
+      setError("Floor number cannot exceed total floors.")
+      return
+    }
+    isSubmitting.current = true
+    setError(null)
+    setLoading(true)
+
+    try {
+      const supabase = createClient()
+      const { fields } = await buildPayload(supabase)
+
+      if (isEditMode) {
+        const { error: updateErr } = await supabase
+          .from("realtor_listings")
+          .update(fields)
+          .eq("id", initialData!.id)
+          .eq("user_id", user.id)
+        if (updateErr) throw new Error(updateErr.message)
+      } else {
+        const { error: insertErr } = await supabase
+          .from("realtor_listings")
+          .insert({ ...fields, user_id: user.id })
+        if (insertErr) throw new Error(insertErr.message)
+      }
+
+      router.push("/profile")
+      router.refresh()
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Something went wrong. Please try again.")
+      setLoading(false)
+      isSubmitting.current = false
+    }
+  }
+
+  // ── Save as draft ──────────────────────────────────────────────────────────
+
+  const handleSaveDraft = async () => {
+    if (!user || isSubmitting.current) return
+    isSubmitting.current = true
+    setError(null)
+    setLoading(true)
+
+    try {
+      const supabase = createClient()
+      const { fields } = await buildPayload(supabase, "draft")
+
+      if (isEditMode) {
+        const { error: updateErr } = await supabase
+          .from("realtor_listings")
+          .update(fields)
+          .eq("id", initialData!.id)
+          .eq("user_id", user.id)
+        if (updateErr) throw new Error(updateErr.message)
+      } else {
+        const { error: insertErr } = await supabase
+          .from("realtor_listings")
+          .insert({ ...fields, user_id: user.id })
+        if (insertErr) throw new Error(insertErr.message)
+      }
 
       router.push("/profile")
       router.refresh()
@@ -568,9 +708,13 @@ export function AddListingForm() {
             <i className="fa-solid fa-arrow-left text-xs" />
             Back to Profile
           </Link>
-          <h1 className="text-4xl font-extrabold text-gray-900 tracking-tight">Post a Listing</h1>
+          <h1 className="text-4xl font-extrabold text-gray-900 tracking-tight">
+            {isEditMode ? "Edit Listing" : "Post a Listing"}
+          </h1>
           <p className="mt-1 text-gray-500 text-sm">
-            Fill in the details to list your property in the HUT marketplace.
+            {isEditMode
+              ? "Update your listing details below."
+              : "Fill in the details to list your property in the HUT marketplace."}
           </p>
         </div>
 
@@ -687,9 +831,21 @@ export function AddListingForm() {
                 onChange={(e) => setField("neighborhood", e.target.value)}
                 className="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#c9a96e] text-sm bg-white"
               >
-                {NEIGHBORHOODS.map((n) => (
-                  <option key={n} value={n}>{n}</option>
-                ))}
+                <option value="" disabled>Select a neighborhood…</option>
+                {NYC_BOROUGHS.map((borough) =>
+                  borough.areas.map((area) => (
+                    <optgroup
+                      key={`${borough.id}-${area.area}`}
+                      label={`${borough.label} — ${area.area}`}
+                    >
+                      {area.neighborhoods.map((n) => (
+                        <option key={n.name} value={n.name}>
+                          {n.sub ? `    ${n.name}` : n.name}
+                        </option>
+                      ))}
+                    </optgroup>
+                  ))
+                )}
               </select>
             </div>
 
@@ -933,11 +1089,41 @@ export function AddListingForm() {
               />
             </div>
 
-            {previewUrls.length > 0 && (
+            {(existingPhotoUrls.length > 0 || previewUrls.length > 0) && (
               <div className="grid grid-cols-4 gap-3">
+                {/* Existing (already-uploaded) photos */}
+                {existingPhotoUrls.map((url, i) => (
+                  <div
+                    key={`existing-${i}`}
+                    className="relative group aspect-square rounded-xl overflow-hidden border-2 border-gray-100"
+                  >
+                    <Image
+                      src={url}
+                      alt={`Photo ${i + 1}`}
+                      fill
+                      className="object-cover"
+                      unoptimized
+                    />
+                    {i === 0 && previewUrls.length === 0 && (
+                      <span className="absolute top-1 left-1 bg-[#c9a96e] text-white text-xs px-2 py-0.5 rounded-full font-semibold pointer-events-none">
+                        Cover
+                      </span>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setExistingPhotoUrls((prev) => prev.filter((_, j) => j !== i))
+                      }
+                      className="absolute top-1 right-1 bg-black/60 text-white w-6 h-6 rounded-full text-xs flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-black/80"
+                    >
+                      <i className="fa-solid fa-xmark" />
+                    </button>
+                  </div>
+                ))}
+                {/* Newly added photos */}
                 {previewUrls.map((url, i) => (
                   <div
-                    key={i}
+                    key={`new-${i}`}
                     draggable
                     onDragStart={() => { draggedFile.current = photoFiles[i] }}
                     onDragEnd={() => { draggedFile.current = null }}
@@ -947,12 +1133,12 @@ export function AddListingForm() {
                   >
                     <Image
                       src={url}
-                      alt={`Photo ${i + 1}`}
+                      alt={`New photo ${i + 1}`}
                       fill
                       className="object-cover"
                       unoptimized
                     />
-                    {i === 0 && (
+                    {existingPhotoUrls.length === 0 && i === 0 && (
                       <span className="absolute top-1 left-1 bg-[#c9a96e] text-white text-xs px-2 py-0.5 rounded-full font-semibold pointer-events-none">
                         Cover
                       </span>
@@ -1001,7 +1187,8 @@ export function AddListingForm() {
                 onChange={(e) => {
                   const f = e.target.files?.[0] ?? null
                   if (f && f.size > 200 * 1024 * 1024) {
-                    setError("Video exceeds 200MB — consider compressing before upload.")
+                    setError("Video exceeds 200MB. Please compress it before uploading.")
+                    e.target.value = ""
                   } else {
                     setVideoFile(f)
                     setError(null)
@@ -1334,19 +1521,33 @@ export function AddListingForm() {
             <p className="text-sm text-red-600 bg-red-50 rounded-xl px-4 py-3">{error}</p>
           )}
 
-          <div className="flex gap-3 pb-6">
-            <Link
-              href="/profile"
-              className="flex-1 py-3 rounded-full border-2 border-gray-200 text-sm font-bold text-gray-600 hover:bg-gray-50 transition-colors text-center"
-            >
-              Cancel
-            </Link>
+          <div className="flex flex-col gap-3 pb-6">
+            <div className="flex gap-3">
+              <Link
+                href="/profile"
+                className="flex-1 py-3 rounded-full border-2 border-gray-200 text-sm font-bold text-gray-600 hover:bg-gray-50 transition-colors text-center"
+              >
+                Cancel
+              </Link>
+              <button
+                type="submit"
+                disabled={loading}
+                className="flex-1 py-3 rounded-full bg-[#c9a96e] text-white text-sm font-bold hover:bg-[#b8935a] transition-colors disabled:opacity-60"
+              >
+                {loading
+                  ? "Saving…"
+                  : isEditMode
+                    ? "Save Changes"
+                    : "Post Listing"}
+              </button>
+            </div>
             <button
-              type="submit"
+              type="button"
               disabled={loading}
-              className="flex-1 py-3 rounded-full bg-[#c9a96e] text-white text-sm font-bold hover:bg-[#b8935a] transition-colors disabled:opacity-60"
+              onClick={handleSaveDraft}
+              className="w-full py-3 rounded-full border-2 border-gray-300 text-sm font-bold text-gray-500 hover:bg-gray-50 transition-colors disabled:opacity-60"
             >
-              {loading ? "Uploading & Posting…" : "Post Listing"}
+              {loading ? "Saving…" : "Save as Draft"}
             </button>
           </div>
         </form>

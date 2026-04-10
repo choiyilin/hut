@@ -18,3 +18,8 @@
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
+
+/* Hide scrollbar in the reel feed column (WebKit) */
+.reel-feed-column::-webkit-scrollbar {
+  display: none;
+}

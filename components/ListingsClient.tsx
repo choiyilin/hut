@@ -16,12 +16,14 @@ import { ReelsView } from "./ReelsView"
 interface Props {
   initialListings: Listing[]
   initialQuery: string
+  initialListingType?: "rent" | "sale"
 }
 
-export function ListingsClient({ initialListings, initialQuery }: Props) {
+export function ListingsClient({ initialListings, initialQuery, initialListingType = "rent" }: Props) {
   const [filters, setFilters] = useState<FilterState>({
     ...DEFAULT_FILTERS,
     search: initialQuery,
+    listingType: initialListingType,
   })
   const [mobileFilterOpen, setMobileFilterOpen] = useState(false)
   const [view, setView] = useState<"grid" | "reels">("grid")
@@ -51,7 +53,7 @@ export function ListingsClient({ initialListings, initialQuery }: Props) {
         {/* ── Page heading ─────────────────────────────────────────────────── */}
         <div className="mb-8">
           <h1 className="text-5xl font-extrabold text-gray-900 mb-1 tracking-tight leading-none">
-            Browse Apartments
+            {filters.listingType === "sale" ? "Homes for Sale" : "Browse Rentals"}
           </h1>
           {/* Search bar */}
           <div className="mt-4 relative max-w-xl">
@@ -83,12 +85,12 @@ export function ListingsClient({ initialListings, initialQuery }: Props) {
           {/* ── Sidebar (desktop) — hidden in reels mode ───────────────────── */}
           {view === "grid" && (
             <aside className="hidden lg:block w-72 flex-shrink-0">
-              <div className="sticky top-[calc(4rem+1px)] max-h-[calc(100vh-5rem)] overflow-y-auto rounded-xl bg-white border border-gray-100 shadow-sm">
+              <div className="sticky top-[77px] max-h-[calc(100vh-77px)] overflow-y-auto rounded-xl bg-white border border-gray-100 shadow-sm">
                 <FilterSidebar
                   filters={filters}
                   onChange={handleChange}
                   onClear={clearAll}
-                  resultCount={results.length}
+
                 />
               </div>
             </aside>
@@ -126,6 +128,23 @@ export function ListingsClient({ initialListings, initialQuery }: Props) {
                     )}
                   </button>
                 )}
+
+                {/* Rent / Buy toggle */}
+                <div className="flex items-center gap-1 p-1 bg-gray-100 rounded-full">
+                  {(["rent", "sale"] as const).map((type) => (
+                    <button
+                      key={type}
+                      onClick={() => handleChange({ listingType: type })}
+                      className={`px-3 py-1.5 rounded-full text-sm font-semibold transition-all ${
+                        filters.listingType === type
+                          ? "bg-white text-gray-900 shadow-sm"
+                          : "text-gray-500 hover:text-gray-700"
+                      }`}
+                    >
+                      {type === "rent" ? "Rent" : "Buy"}
+                    </button>
+                  ))}
+                </div>
 
                 {/* View toggle */}
                 <div className="flex items-center gap-1 p-1 bg-gray-100 rounded-full">
@@ -214,7 +233,7 @@ export function ListingsClient({ initialListings, initialQuery }: Props) {
 
       {/* ── Reels overlay ───────────────────────────────────────────────── */}
       {view === "reels" && (
-        <div className="fixed inset-x-0 bottom-0 z-40" style={{ top: "64px" }}>
+        <div className="fixed inset-x-0 bottom-0 z-40" style={{ top: "76px" }}>
           {reelsListings.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-full bg-gray-900 text-center px-6">
               <i className="fa-solid fa-film text-gray-700 text-5xl mb-4" />
@@ -263,7 +282,6 @@ export function ListingsClient({ initialListings, initialQuery }: Props) {
                 filters={filters}
                 onChange={handleChange}
                 onClear={clearAll}
-                resultCount={results.length}
               />
             </div>
 

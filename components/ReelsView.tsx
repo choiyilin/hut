@@ -1,185 +1,277 @@
 "use client"
 
-import { useRef, useState, useEffect, useCallback } from "react"
+import { useRef, useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import type { Listing } from "@/types"
+import { useSaved } from "@/contexts/SavedContext"
 
-interface ReelSlideProps {
-  listing: Listing
-  isActive: boolean
-}
 
-function ReelSlide({ listing, isActive }: ReelSlideProps) {
+function ReelSlide({ listing }: { listing: Listing }) {
   const videoRef = useRef<HTMLVideoElement>(null)
+  const slideRef = useRef<HTMLDivElement>(null)
   const router = useRouter()
-  const [hearted, setHearted] = useState(false)
+  const { isSaved, toggleSaved } = useSaved()
+  const [preload, setPreload] = useState<"none" | "metadata">("none")
 
   useEffect(() => {
-    if (isActive) {
-      videoRef.current?.play().catch(() => undefined)
-    } else {
-      videoRef.current?.pause()
-    }
-  }, [isActive])
+    const video = videoRef.current
+    const slide = slideRef.current
+    if (!video || !slide) return
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setPreload("metadata")
+          video.play().catch(() => undefined)
+        } else {
+          video.pause()
+        }
+      },
+      { threshold: 0.6 }
+    )
+
+    observer.observe(slide)
+    return () => observer.disconnect()
+  }, [])
 
   const bedLabel =
-    listing.beds === 0
-      ? "Studio"
-      : listing.beds === 1
-        ? "1 bed"
-        : `${listing.beds} beds`
+    listing.beds === 0 ? "Studio" : listing.beds === 1 ? "1 bed" : `${listing.beds} beds`
+
+  const tags = [
+    bedLabel,
+    listing.baths === 1 ? "1 bath" : `${listing.baths} baths`,
+    `${listing.sqft.toLocaleString()} sqft`,
+  ]
 
   return (
     <div
-      className={`absolute inset-0 overflow-hidden cursor-pointer transition-opacity duration-300 ${
-        isActive ? "opacity-100" : "opacity-0 pointer-events-none"
-      }`}
-      onClick={() => router.push(`/listings/${listing.id}`)}
+      ref={slideRef}
+      style={{
+        width: "100%",
+        height: "100%",
+        scrollSnapAlign: "start",
+        flexShrink: 0,
+        position: "relative",
+        background: "#000",
+      }}
     >
+      {/* Video — fills the full snap unit */}
       <video
         ref={videoRef}
         src={listing.videoUrl}
+        poster={listing.imageUrl}
+        preload={preload}
         muted
         loop
         playsInline
-        className="absolute inset-0 w-full h-full object-cover"
+        style={{
+          position: "absolute",
+          inset: 0,
+          width: "100%",
+          height: "100%",
+          objectFit: "cover",
+        }}
       />
 
-      {/* Vignette */}
-      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+      {/* Vignette — heavier at bottom so text reads over video */}
+      <div
+        style={{
+          position: "absolute",
+          inset: 0,
+          background:
+            "linear-gradient(to top, rgba(0,0,0,0.88) 0%, rgba(0,0,0,0.2) 45%, transparent 100%)",
+          pointerEvents: "none",
+        }}
+      />
 
-      {/* Heart */}
-      <button
-        onClick={(e) => { e.stopPropagation(); setHearted(h => !h) }}
-        className="absolute top-5 right-5 w-10 h-10 flex items-center justify-center rounded-full bg-black/30 backdrop-blur-sm text-white hover:bg-black/50 transition-colors"
-        aria-label={hearted ? "Remove from favorites" : "Add to favorites"}
+      {/* Info overlay — bottom-left, leaves room for action column on the right */}
+      <div
+        onClick={() => router.push(`/listings/${listing.id}`)}
+        style={{
+          position: "absolute",
+          bottom: 0,
+          left: 0,
+          right: 76,
+          padding: "0 16px 20px 16px",
+          cursor: "pointer",
+          display: "flex",
+          flexDirection: "column",
+          gap: 6,
+        }}
       >
-        <i className={`${hearted ? "fa-solid" : "fa-regular"} fa-heart text-base ${hearted ? "text-red-400" : ""}`} />
-      </button>
-
-      {/* Bottom info */}
-      <div className="absolute bottom-0 left-0 right-0 p-6 pb-8">
-        <span className="inline-block px-3 py-1 rounded-full text-xs font-bold mb-3 text-gray-900 bg-[#c9a96e]">
+        <span
+          style={{
+            alignSelf: "flex-start",
+            padding: "2px 9px",
+            borderRadius: 999,
+            fontSize: 10,
+            fontWeight: 700,
+            color: "#111",
+            background: "#c9a96e",
+          }}
+        >
           {listing.neighborhood}
         </span>
-        <p className="text-4xl font-extrabold text-white leading-none mb-1">
+
+        <p style={{ fontSize: 28, fontWeight: 800, color: "#fff", lineHeight: 1 }}>
           ${listing.price.toLocaleString()}
-          <span className="text-lg font-medium text-white/70">/mo</span>
+          <span
+            style={{ fontSize: 14, fontWeight: 500, color: "rgba(255,255,255,0.6)", marginLeft: 3 }}
+          >
+            /mo
+          </span>
         </p>
-        <p className="text-sm text-white/80 mb-3 leading-snug">{listing.address}</p>
-        <div className="flex items-center gap-2 flex-wrap mb-4">
-          <span className="px-3 py-1 rounded-full text-xs font-semibold text-white bg-white/15 backdrop-blur-sm">
-            {bedLabel}
-          </span>
-          <span className="px-3 py-1 rounded-full text-xs font-semibold text-white bg-white/15 backdrop-blur-sm">
-            {listing.baths === 1 ? "1 bath" : `${listing.baths} baths`}
-          </span>
-          <span className="px-3 py-1 rounded-full text-xs font-semibold text-white bg-white/15 backdrop-blur-sm">
-            {listing.sqft.toLocaleString()} sqft
-          </span>
+
+        <p
+          style={{
+            fontSize: 12,
+            color: "rgba(255,255,255,0.7)",
+            overflow: "hidden",
+            textOverflow: "ellipsis",
+            whiteSpace: "nowrap",
+          }}
+        >
+          {listing.address}
+        </p>
+
+        <div style={{ display: "flex", gap: 5, flexWrap: "wrap" }}>
+          {tags.map((tag) => (
+            <span
+              key={tag}
+              style={{
+                padding: "3px 9px",
+                borderRadius: 999,
+                fontSize: 11,
+                fontWeight: 600,
+                color: "rgba(255,255,255,0.9)",
+                background: "rgba(255,255,255,0.15)",
+                backdropFilter: "blur(6px)",
+              }}
+            >
+              {tag}
+            </span>
+          ))}
         </div>
-        <div className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-white text-gray-900 text-sm font-bold hover:bg-gray-100 transition-colors">
-          View listing
-          <i className="fa-solid fa-arrow-right text-xs" />
-        </div>
+      </div>
+
+      {/* Right action column — pinned to bottom-right of the slide */}
+      <div
+        style={{
+          position: "absolute",
+          bottom: 20,
+          right: 14,
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          gap: 22,
+        }}
+      >
+        <button
+          onClick={(e) => {
+            e.stopPropagation()
+            toggleSaved(listing.id)
+          }}
+          aria-label={isSaved(listing.id) ? "Remove from saved" : "Save listing"}
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            gap: 5,
+            background: "none",
+            border: "none",
+            cursor: "pointer",
+            color: isSaved(listing.id) ? "#ff4d6d" : "#fff",
+            padding: 0,
+          }}
+        >
+          <i
+            className={`${isSaved(listing.id) ? "fa-solid" : "fa-regular"} fa-heart`}
+            style={{ fontSize: 30 }}
+          />
+          <span style={{ fontSize: 11, color: "#fff", fontWeight: 600 }}>Save</span>
+        </button>
+
+        <button
+          onClick={(e) => {
+            e.stopPropagation()
+            const url = `${window.location.origin}/listings/${listing.id}`
+            if (navigator.share) {
+              navigator.share({ title: listing.title, text: listing.address, url }).catch(() => undefined)
+            } else {
+              navigator.clipboard.writeText(url).catch(() => undefined)
+            }
+          }}
+          aria-label="Share listing"
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            gap: 5,
+            background: "none",
+            border: "none",
+            cursor: "pointer",
+            color: "#fff",
+            padding: 0,
+          }}
+        >
+          <i className="fa-solid fa-share" style={{ fontSize: 28 }} />
+          <span style={{ fontSize: 11, color: "#fff", fontWeight: 600 }}>Share</span>
+        </button>
+
+        <button
+          onClick={(e) => {
+            e.stopPropagation()
+            router.push(`/listings/${listing.id}`)
+          }}
+          aria-label="View full listing"
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            gap: 5,
+            background: "none",
+            border: "none",
+            cursor: "pointer",
+            color: "#fff",
+            padding: 0,
+          }}
+        >
+          <i className="fa-solid fa-arrow-up-right-from-square" style={{ fontSize: 24 }} />
+          <span style={{ fontSize: 11, color: "#fff", fontWeight: 600 }}>View</span>
+        </button>
       </div>
     </div>
   )
 }
 
-interface Props {
-  listings: Listing[]
-}
-
-export function ReelsView({ listings }: Props) {
-  const [activeIndex, setActiveIndex] = useState(0)
-  const activeIndexRef = useRef(0)
-  const containerRef = useRef<HTMLDivElement>(null)
-  const lastScrollRef = useRef(0)
-
-  const goTo = useCallback((index: number) => {
-    if (index < 0 || index >= listings.length) return
-    activeIndexRef.current = index
-    setActiveIndex(index)
-  }, [listings.length])
-
-  // Trackpad / mouse wheel navigation
-  useEffect(() => {
-    const container = containerRef.current
-    if (!container) return
-
-    const handleWheel = (e: WheelEvent) => {
-      e.preventDefault()
-      const now = Date.now()
-      if (now - lastScrollRef.current < 700) return
-      if (Math.abs(e.deltaY) < 10) return
-      lastScrollRef.current = now
-      if (e.deltaY > 0) goTo(activeIndexRef.current + 1)
-      else goTo(activeIndexRef.current - 1)
-    }
-
-    container.addEventListener("wheel", handleWheel, { passive: false })
-    return () => container.removeEventListener("wheel", handleWheel)
-  }, [goTo])
-
+export function ReelsView({ listings }: { listings: Listing[] }) {
   return (
     <div
-      ref={containerRef}
-      className="relative h-full bg-gray-950 flex flex-col items-center justify-center gap-3 overflow-hidden"
+      style={{
+        display: "flex",
+        justifyContent: "center",
+        alignItems: "stretch",
+        width: "100%",
+        height: "100%",
+        background: "#000",
+        overflow: "hidden",
+      }}
     >
-      {/* Up arrow — fixed-height slot so layout doesn't shift */}
-      <div className="h-10 flex items-center">
-        {activeIndex > 0 && (
-          <button
-            onClick={() => goTo(activeIndex - 1)}
-            className="w-10 h-10 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 text-white backdrop-blur-sm transition-colors"
-            aria-label="Previous listing"
-          >
-            <i className="fa-solid fa-chevron-up text-sm" />
-          </button>
-        )}
-      </div>
-
-      {/* Reel card — 9:16 portrait, ~56vh tall */}
+      {/* padding-bottom = info panel height so the last item can scroll fully into view */}
       <div
-        className="relative rounded-2xl overflow-hidden"
-        style={{ height: "56vh", width: "calc(56vh * 9 / 16)" }}
+        className="reel-feed-column"
+        style={{
+          height: "100%",
+          aspectRatio: "9 / 16",
+          maxWidth: "100%",
+          overflowY: "scroll",
+          scrollSnapType: "y mandatory",
+          scrollbarWidth: "none",
+          WebkitOverflowScrolling: "touch",
+        } as React.CSSProperties}
       >
-        {listings.map((listing, i) => (
-          <ReelSlide
-            key={listing.id}
-            listing={listing}
-            isActive={activeIndex === i}
-          />
-        ))}
-      </div>
-
-      {/* Down arrow */}
-      <div className="h-10 flex items-center">
-        {activeIndex < listings.length - 1 && (
-          <button
-            onClick={() => goTo(activeIndex + 1)}
-            className="w-10 h-10 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 text-white backdrop-blur-sm transition-colors"
-            aria-label="Next listing"
-          >
-            <i className="fa-solid fa-chevron-down text-sm" />
-          </button>
-        )}
-      </div>
-
-      {/* Dot rail */}
-      <div className="absolute right-4 top-1/2 -translate-y-1/2 flex flex-col items-center gap-1.5 z-10">
-        {listings.map((_, i) => (
-          <button
-            key={i}
-            onClick={() => goTo(i)}
-            aria-label={`Go to slide ${i + 1}`}
-            className={`rounded-full bg-white transition-all duration-200 ${
-              activeIndex === i
-                ? "w-1.5 h-6 opacity-100"
-                : "w-1.5 h-1.5 opacity-40 hover:opacity-70"
-            }`}
-          />
+        {listings.map((listing) => (
+          <ReelSlide key={listing.id} listing={listing} />
         ))}
       </div>
     </div>

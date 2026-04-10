@@ -1,19 +1,8 @@
 import type { FilterState, BedFilter, BathFilter } from "@/types"
+import { countActiveFilters } from "@/types"
+import { NeighborhoodPicker } from "./NeighborhoodPicker"
 
 // ── Static data ───────────────────────────────────────────────────────────────
-
-export const NEIGHBORHOODS = [
-  "Park Slope",
-  "Williamsburg",
-  "Bushwick",
-  "Upper West Side",
-  "East Village",
-  "Astoria",
-  "Chelsea",
-  "Harlem",
-  "DUMBO",
-  "Lower East Side",
-]
 
 export const AMENITIES = [
   "doorman",
@@ -37,7 +26,6 @@ export const AMENITIES = [
 ]
 
 const BED_OPTIONS: { label: string; value: BedFilter }[] = [
-  { label: "Any", value: "any" },
   { label: "Studio", value: "studio" },
   { label: "1", value: "1" },
   { label: "2", value: "2" },
@@ -46,9 +34,10 @@ const BED_OPTIONS: { label: string; value: BedFilter }[] = [
 ]
 
 const BATH_OPTIONS: { label: string; value: BathFilter }[] = [
-  { label: "Any", value: "any" },
   { label: "1", value: "1" },
-  { label: "2+", value: "2+" },
+  { label: "2", value: "2" },
+  { label: "3", value: "3" },
+  { label: "4", value: "4" },
 ]
 
 const PRICE_PRESETS = [
@@ -76,19 +65,9 @@ interface Props {
   filters: FilterState
   onChange: (partial: Partial<FilterState>) => void
   onClear: () => void
-  resultCount: number
 }
 
-export function FilterSidebar({ filters, onChange, onClear, resultCount }: Props) {
-  void resultCount
-
-  const toggleNeighborhood = (n: string) => {
-    const next = filters.neighborhoods.includes(n)
-      ? filters.neighborhoods.filter((x) => x !== n)
-      : [...filters.neighborhoods, n]
-    onChange({ neighborhoods: next })
-  }
-
+export function FilterSidebar({ filters, onChange, onClear }: Props) {
   const toggleAmenity = (a: string) => {
     const next = filters.amenities.includes(a)
       ? filters.amenities.filter((x) => x !== a)
@@ -107,14 +86,21 @@ export function FilterSidebar({ filters, onChange, onClear, resultCount }: Props
     }
   }
 
-  const hasActiveFilters =
-    filters.neighborhoods.length > 0 ||
-    filters.minPrice !== "" ||
-    filters.maxPrice !== "" ||
-    filters.beds !== "any" ||
-    filters.baths !== "any" ||
-    filters.amenities.length > 0 ||
-    filters.search.trim().length > 0
+  const toggleBed = (v: BedFilter) => {
+    const next = filters.beds.includes(v)
+      ? filters.beds.filter((x) => x !== v)
+      : [...filters.beds, v]
+    onChange({ beds: next })
+  }
+
+  const toggleBath = (v: BathFilter) => {
+    const next = filters.baths.includes(v)
+      ? filters.baths.filter((x) => x !== v)
+      : [...filters.baths, v]
+    onChange({ baths: next })
+  }
+
+  const hasActiveFilters = countActiveFilters(filters) > 0
 
   return (
     <div className="p-5">
@@ -133,24 +119,10 @@ export function FilterSidebar({ filters, onChange, onClear, resultCount }: Props
 
       {/* ── Neighborhood ────────────────────────────────────────── */}
       <SectionLabel>Neighborhood</SectionLabel>
-      <div className="space-y-2">
-        {NEIGHBORHOODS.map((n) => (
-          <label
-            key={n}
-            className="flex items-center gap-2.5 cursor-pointer group"
-          >
-            <input
-              type="checkbox"
-              checked={filters.neighborhoods.includes(n)}
-              onChange={() => toggleNeighborhood(n)}
-              className="w-4 h-4 rounded border-gray-300 cursor-pointer accent-gray-900"
-            />
-            <span className="text-sm font-medium text-gray-700 group-hover:text-gray-900 transition-colors select-none">
-              {n}
-            </span>
-          </label>
-        ))}
-      </div>
+      <NeighborhoodPicker
+        selected={filters.neighborhoods}
+        onChange={(neighborhoods) => onChange({ neighborhoods })}
+      />
 
       <Divider />
 
@@ -197,18 +169,16 @@ export function FilterSidebar({ filters, onChange, onClear, resultCount }: Props
 
       {/* ── Beds ────────────────────────────────────────────────── */}
       <SectionLabel>Bedrooms</SectionLabel>
-      <div className="flex border-2 border-gray-200 rounded-xl overflow-hidden">
-        {BED_OPTIONS.map((opt, i) => (
+      <div className="flex flex-wrap gap-1.5">
+        {BED_OPTIONS.map((opt) => (
           <button
             key={opt.value}
-            onClick={() => onChange({ beds: opt.value })}
-            className={[
-              "flex-1 py-2.5 text-xs font-bold transition-colors",
-              i < BED_OPTIONS.length - 1 ? "border-r-2 border-gray-200" : "",
-              filters.beds === opt.value
-                ? "bg-gray-900 text-white"
-                : "bg-white text-gray-600 hover:bg-gray-50",
-            ].join(" ")}
+            onClick={() => toggleBed(opt.value)}
+            className={`px-3 py-1.5 text-xs font-bold rounded-full border-2 transition-colors ${
+              filters.beds.includes(opt.value)
+                ? "bg-gray-900 border-gray-900 text-white"
+                : "bg-white border-gray-200 text-gray-700 hover:border-gray-400"
+            }`}
           >
             {opt.label}
           </button>
@@ -219,18 +189,16 @@ export function FilterSidebar({ filters, onChange, onClear, resultCount }: Props
 
       {/* ── Baths ───────────────────────────────────────────────── */}
       <SectionLabel>Bathrooms</SectionLabel>
-      <div className="flex border-2 border-gray-200 rounded-xl overflow-hidden">
-        {BATH_OPTIONS.map((opt, i) => (
+      <div className="flex flex-wrap gap-1.5">
+        {BATH_OPTIONS.map((opt) => (
           <button
             key={opt.value}
-            onClick={() => onChange({ baths: opt.value })}
-            className={[
-              "flex-1 py-2.5 text-xs font-bold transition-colors",
-              i < BATH_OPTIONS.length - 1 ? "border-r-2 border-gray-200" : "",
-              filters.baths === opt.value
-                ? "bg-gray-900 text-white"
-                : "bg-white text-gray-600 hover:bg-gray-50",
-            ].join(" ")}
+            onClick={() => toggleBath(opt.value)}
+            className={`px-3 py-1.5 text-xs font-bold rounded-full border-2 transition-colors ${
+              filters.baths.includes(opt.value)
+                ? "bg-gray-900 border-gray-900 text-white"
+                : "bg-white border-gray-200 text-gray-700 hover:border-gray-400"
+            }`}
           >
             {opt.label}
           </button>

@@ -20,7 +20,7 @@ export interface Listing {
   // Extended fields (optional — existing mock listings stay type-safe)
   listingType?: "rent" | "sale"
   propertyType?: "apartment" | "house" | "condo" | "townhouse" | "co-op" | "multi-family"
-  status?: "active" | "pending" | "off-market"
+  status?: "active" | "pending" | "off-market" | "draft"
   unitNumber?: string
   city?: string
   state?: string
@@ -45,6 +45,7 @@ export interface Listing {
   openHouseSlots?: OpenHouseSlot[]
   securityDeposit?: number
   brokerFeeAmount?: number
+  brokerFeePct?: number
   hoaFees?: number
   propertyTaxesYear?: number
 }
@@ -70,7 +71,7 @@ export type RealtorListingRow = {
   // New columns (all have DB defaults so existing rows are safe)
   listing_type: string | null
   property_type: string | null
-  status: string | null
+  status: "active" | "pending" | "off-market" | "draft" | null
   unit_number: string | null
   city: string | null
   state: string | null
@@ -140,7 +141,7 @@ export function realtorRowToListing(row: RealtorListingRow): Listing {
     featured: row.featured,
     listingType: (row.listing_type as Listing["listingType"]) ?? undefined,
     propertyType: (row.property_type as Listing["propertyType"]) ?? undefined,
-    status: (row.status as Listing["status"]) ?? undefined,
+    status: row.status ?? undefined,
     unitNumber: row.unit_number ?? undefined,
     city: row.city ?? undefined,
     state: row.state ?? undefined,
@@ -165,24 +166,54 @@ export function realtorRowToListing(row: RealtorListingRow): Listing {
     openHouseSlots: row.open_house_slots.length > 0 ? row.open_house_slots : undefined,
     securityDeposit: row.security_deposit ?? undefined,
     brokerFeeAmount: row.broker_fee_amount ?? undefined,
+    brokerFeePct: row.broker_fee_pct ?? undefined,
     hoaFees: row.hoa_fees ?? undefined,
     propertyTaxesYear: row.property_taxes_year ?? undefined,
   }
 }
 
+// ── Neighborhood parent→sub cluster map ───────────────────────────────────────
+// Built once at module load from NYC_BOROUGHS. Selecting a parent neighborhood
+// in the filter also matches its indented sub-neighborhoods.
+import { NYC_BOROUGHS } from "@/data/nyc-neighborhoods"
+
+const PARENT_TO_SUBS = (() => {
+  const map = new Map<string, Set<string>>()
+  for (const borough of NYC_BOROUGHS) {
+    for (const area of borough.areas) {
+      let parent: string | null = null
+      let subs = new Set<string>()
+      for (const n of area.neighborhoods) {
+        if (!n.sub) {
+          if (parent && subs.size > 0) map.set(parent, new Set(subs))
+          parent = n.name
+          subs = new Set()
+        } else if (parent) {
+          subs.add(n.name)
+        }
+      }
+      if (parent && subs.size > 0) map.set(parent, new Set(subs))
+    }
+  }
+  return map
+})()
+
+// ── Shared types ──────────────────────────────────────────────────────────────
+
 export type SortOption = "newest" | "price-asc" | "price-desc" | "sqft-desc"
-export type BedFilter = "any" | "studio" | "1" | "2" | "3" | "4+"
-export type BathFilter = "any" | "1" | "2+"
+export type BedFilter = "studio" | "1" | "2" | "3" | "4+"
+export type BathFilter = "1" | "2" | "3" | "4"
 
 export interface FilterState {
   search: string
   neighborhoods: string[]
   minPrice: number | ""
   maxPrice: number | ""
-  beds: BedFilter
-  baths: BathFilter
+  beds: BedFilter[]
+  baths: BathFilter[]
   amenities: string[]
   sort: SortOption
+  listingType: "rent" | "sale"
 }
 
 export const DEFAULT_FILTERS: FilterState = {
@@ -190,10 +221,11 @@ export const DEFAULT_FILTERS: FilterState = {
   neighborhoods: [],
   minPrice: "",
   maxPrice: "",
-  beds: "any",
-  baths: "any",
+  beds: [],
+  baths: [],
   amenities: [],
   sort: "newest",
+  listingType: "rent",
 }
 
 /** How many filter groups are currently active (for mobile badge) */
@@ -202,8 +234,8 @@ export function countActiveFilters(filters: FilterState): number {
   if (filters.search.trim()) count++
   if (filters.neighborhoods.length > 0) count++
   if (filters.minPrice !== "" || filters.maxPrice !== "") count++
-  if (filters.beds !== "any") count++
-  if (filters.baths !== "any") count++
+  if (filters.beds.length > 0) count++
+  if (filters.baths.length > 0) count++
   if (filters.amenities.length > 0) count++
   return count
 }
@@ -220,6 +252,14 @@ export function filterAndSortListings(
   const q = filters.search.trim().toLowerCase()
 
   const filtered = listings.filter((listing) => {
+    // ── Listing type (rent vs sale) ───────────────────────────────
+    // Static mock listings have no listingType → treated as rent
+    if (filters.listingType === "sale") {
+      if (listing.listingType !== "sale") return false
+    } else {
+      if (listing.listingType === "sale") return false
+    }
+
     // ── Text search ─────────────────────────────────────────────
     if (q) {
       const haystack = [
@@ -234,11 +274,16 @@ export function filterAndSortListings(
     }
 
     // ── Neighborhood ─────────────────────────────────────────────
-    if (
-      filters.neighborhoods.length > 0 &&
-      !filters.neighborhoods.includes(listing.neighborhood)
-    )
-      return false
+    // Selecting a parent (e.g. "Chelsea") also matches sub-neighborhoods
+    // (e.g. "West Chelsea"). Selecting a sub matches only that sub.
+    if (filters.neighborhoods.length > 0) {
+      const match = filters.neighborhoods.some(
+        (sel) =>
+          sel === listing.neighborhood ||
+          (PARENT_TO_SUBS.get(sel)?.has(listing.neighborhood) ?? false)
+      )
+      if (!match) return false
+    }
 
     // ── Price ─────────────────────────────────────────────────────
     if (filters.minPrice !== "" && listing.price < filters.minPrice)
@@ -246,16 +291,30 @@ export function filterAndSortListings(
     if (filters.maxPrice !== "" && listing.price > filters.maxPrice)
       return false
 
-    // ── Beds ──────────────────────────────────────────────────────
-    if (filters.beds === "studio" && listing.beds !== 0) return false
-    if (filters.beds === "1" && listing.beds !== 1) return false
-    if (filters.beds === "2" && listing.beds !== 2) return false
-    if (filters.beds === "3" && listing.beds !== 3) return false
-    if (filters.beds === "4+" && listing.beds < 4) return false
+    // ── Beds (multi-select OR — matches any selected value) ───────
+    if (filters.beds.length > 0) {
+      const match = filters.beds.some((b) => {
+        if (b === "studio") return listing.beds === 0
+        if (b === "1") return listing.beds === 1
+        if (b === "2") return listing.beds === 2
+        if (b === "3") return listing.beds === 3
+        if (b === "4+") return listing.beds >= 4
+        return false
+      })
+      if (!match) return false
+    }
 
-    // ── Baths ─────────────────────────────────────────────────────
-    if (filters.baths === "1" && Math.floor(listing.baths) !== 1) return false
-    if (filters.baths === "2+" && listing.baths < 2) return false
+    // ── Baths (multi-select OR) ────────────────────────────────────
+    if (filters.baths.length > 0) {
+      const match = filters.baths.some((b) => {
+        if (b === "1") return Math.floor(listing.baths) === 1
+        if (b === "2") return Math.floor(listing.baths) === 2
+        if (b === "3") return Math.floor(listing.baths) === 3
+        if (b === "4") return listing.baths >= 4
+        return false
+      })
+      if (!match) return false
+    }
 
     // ── Amenities (AND — listing must have ALL checked) ───────────
     if (
