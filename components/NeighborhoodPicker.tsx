@@ -109,8 +109,8 @@ export function NeighborhoodPicker({ selected, onChange }: Props) {
 
   const suggestions = useMemo(() => {
     const q = search.trim().toLowerCase()
+    if (!q) return []
     const unselected = ALL_NYC_NEIGHBORHOODS.filter((n) => !selected.includes(n))
-    if (!q) return unselected.slice(0, 10)
     return unselected.filter((n) => n.toLowerCase().includes(q)).slice(0, 10)
   }, [search, selected])
 
@@ -172,21 +172,23 @@ export function NeighborhoodPicker({ selected, onChange }: Props) {
                 ))}
               </div>
             )}
-            <div className="max-h-44 overflow-y-auto">
-              {suggestions.length === 0 ? (
-                <p className="px-3 py-3 text-xs text-gray-400 text-center">No results for &ldquo;{search}&rdquo;</p>
-              ) : (
-                suggestions.map((n) => (
-                  <button
-                    key={n}
-                    onClick={() => { toggle(n); setSearch("") }}
-                    className="w-full text-left px-3 py-2.5 text-sm text-gray-700 hover:bg-gray-50 hover:text-gray-900 transition-colors"
-                  >
-                    {n}
-                  </button>
-                ))
-              )}
-            </div>
+            {search.trim() && (
+              <div className="max-h-44 overflow-y-auto">
+                {suggestions.length === 0 ? (
+                  <p className="px-3 py-3 text-xs text-gray-400 text-center">No results for &ldquo;{search}&rdquo;</p>
+                ) : (
+                  suggestions.map((n) => (
+                    <button
+                      key={n}
+                      onClick={() => { toggle(n); setSearch("") }}
+                      className="w-full text-left px-3 py-2.5 text-sm text-gray-700 hover:bg-gray-50 hover:text-gray-900 transition-colors"
+                    >
+                      {n}
+                    </button>
+                  ))
+                )}
+              </div>
+            )}
             <div className="p-3 border-t border-gray-100">
               <button
                 onClick={() => { setBrowserOpen(true); setPickerOpen(false) }}
@@ -260,7 +262,7 @@ function NeighborhoodBrowser({
   const currentBorough = NYC_BOROUGHS.find((b) => b.id === activeBorough)!
 
   return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
+    <div data-modal="true" className="fixed inset-0 z-[60] flex items-center justify-center p-4">
       {/* Backdrop */}
       <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
 

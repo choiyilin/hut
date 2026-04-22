@@ -24,3 +24,5 @@ export function ListingMap({ lat, lng }: Props) {
     </Map>
   )
 }
+
+export default ListingMap

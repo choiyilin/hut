@@ -6,22 +6,32 @@ import type { Listing } from "@/types"
 import { useSaved } from "@/contexts/SavedContext"
 
 
-function ReelSlide({ listing }: { listing: Listing }) {
+function ReelSlide({ listing, index }: { listing: Listing; index: number }) {
   const videoRef = useRef<HTMLVideoElement>(null)
   const slideRef = useRef<HTMLDivElement>(null)
   const router = useRouter()
   const { isSaved, toggleSaved } = useSaved()
-  const [preload, setPreload] = useState<"none" | "metadata">("none")
+  const [preload, setPreload] = useState<"none" | "metadata" | "auto">(
+    index === 0 ? "auto" : "none"
+  )
 
   useEffect(() => {
     const video = videoRef.current
     const slide = slideRef.current
     if (!video || !slide) return
 
-    const observer = new IntersectionObserver(
+    const preloadObserver = new IntersectionObserver(
       ([entry]) => {
         if (entry.isIntersecting) {
-          setPreload("metadata")
+          setPreload((current) => (current === "auto" ? current : "metadata"))
+        }
+      },
+      { threshold: 0, rootMargin: "100% 0px" }
+    )
+
+    const playObserver = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
           video.play().catch(() => undefined)
         } else {
           video.pause()
@@ -30,8 +40,12 @@ function ReelSlide({ listing }: { listing: Listing }) {
       { threshold: 0.6 }
     )
 
-    observer.observe(slide)
-    return () => observer.disconnect()
+    preloadObserver.observe(slide)
+    playObserver.observe(slide)
+    return () => {
+      preloadObserver.disconnect()
+      playObserver.disconnect()
+    }
   }, [])
 
   const bedLabel =
@@ -59,7 +73,6 @@ function ReelSlide({ listing }: { listing: Listing }) {
       <video
         ref={videoRef}
         src={listing.videoUrl}
-        poster={listing.imageUrl}
         preload={preload}
         muted
         loop
@@ -115,11 +128,13 @@ function ReelSlide({ listing }: { listing: Listing }) {
 
         <p style={{ fontSize: 28, fontWeight: 800, color: "#fff", lineHeight: 1 }}>
           ${listing.price.toLocaleString()}
-          <span
-            style={{ fontSize: 14, fontWeight: 500, color: "rgba(255,255,255,0.6)", marginLeft: 3 }}
-          >
-            /mo
-          </span>
+          {listing.listingType !== "sale" && (
+            <span
+              style={{ fontSize: 14, fontWeight: 500, color: "rgba(255,255,255,0.6)", marginLeft: 3 }}
+            >
+              /mo
+            </span>
+          )}
         </p>
 
         <p
@@ -270,8 +285,8 @@ export function ReelsView({ listings }: { listings: Listing[] }) {
           WebkitOverflowScrolling: "touch",
         } as React.CSSProperties}
       >
-        {listings.map((listing) => (
-          <ReelSlide key={listing.id} listing={listing} />
+        {listings.map((listing, index) => (
+          <ReelSlide key={listing.id} listing={listing} index={index} />
         ))}
       </div>
     </div>

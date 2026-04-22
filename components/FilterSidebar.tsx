@@ -25,7 +25,7 @@ export const AMENITIES = [
   "pool",
 ]
 
-const BED_OPTIONS: { label: string; value: BedFilter }[] = [
+export const BED_OPTIONS: { label: string; value: BedFilter }[] = [
   { label: "Studio", value: "studio" },
   { label: "1", value: "1" },
   { label: "2", value: "2" },
@@ -33,14 +33,14 @@ const BED_OPTIONS: { label: string; value: BedFilter }[] = [
   { label: "4+", value: "4+" },
 ]
 
-const BATH_OPTIONS: { label: string; value: BathFilter }[] = [
+export const BATH_OPTIONS: { label: string; value: BathFilter }[] = [
   { label: "1", value: "1" },
   { label: "2", value: "2" },
   { label: "3", value: "3" },
   { label: "4", value: "4" },
 ]
 
-const PRICE_PRESETS = [
+export const PRICE_PRESETS = [
   { label: "Under $2k", min: "" as const, max: 2000 },
   { label: "$2k–$3.5k", min: 2000, max: 3500 },
   { label: "$3.5k–$5k", min: 3500, max: 5000 },

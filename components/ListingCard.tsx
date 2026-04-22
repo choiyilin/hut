@@ -16,8 +16,8 @@ export function ListingCard({ listing }: Props) {
   const bedLabel = listing.beds === 0 ? "Studio" : `${listing.beds} bd`
 
   return (
-    <Link href={`/listings/${listing.id}`} className="group block">
-      <article className="bg-white border border-gray-200 rounded-3xl overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:shadow-lg">
+    <Link href={`/listings/${listing.id}`} className="group block h-full">
+      <article className="h-full flex flex-col bg-white border border-gray-200 rounded-3xl overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:shadow-lg">
         {/* Image */}
         <div className="relative aspect-[4/3] overflow-hidden bg-gray-100">
           <Image
@@ -52,7 +52,7 @@ export function ListingCard({ listing }: Props) {
         </div>
 
         {/* Body */}
-        <div className="p-4">
+        <div className="flex-1 p-4">
           {/* Neighborhood tag */}
           <span className="inline-block text-[11px] font-bold text-white bg-gray-900 px-2.5 py-1 rounded-full mb-3">
             {listing.neighborhood}
@@ -63,7 +63,9 @@ export function ListingCard({ listing }: Props) {
             <span className="text-2xl font-bold text-gray-900 tracking-tight">
               ${listing.price.toLocaleString()}
             </span>
-            <span className="text-sm font-medium text-gray-400">/mo</span>
+            {listing.listingType !== "sale" && (
+              <span className="text-sm font-medium text-gray-400">/mo</span>
+            )}
           </div>
 
           {/* Address */}

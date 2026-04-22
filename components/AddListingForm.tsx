@@ -259,6 +259,7 @@ function FieldLabel({ children, required }: { children: React.ReactNode; require
 function TextInput({
   value,
   onChange,
+  onBlur,
   placeholder,
   type = "text",
   required,
@@ -268,6 +269,7 @@ function TextInput({
 }: {
   value: string
   onChange: (v: string) => void
+  onBlur?: () => void
   placeholder?: string
   type?: string
   required?: boolean
@@ -283,6 +285,7 @@ function TextInput({
       max={max}
       value={value}
       onChange={(e) => onChange(e.target.value)}
+      onBlur={onBlur}
       placeholder={placeholder}
       className={`w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#c9a96e] text-sm ${className ?? ""}`}
     />
@@ -350,6 +353,7 @@ function CheckboxField({
 
 export function AddListingForm({ initialData }: { initialData?: RealtorListingRow }) {
   const isEditMode = !!initialData
+  const isDraft = isEditMode && initialData?.status === 'draft'
   const router = useRouter()
   const [user, setUser] = useState<User | null>(null)
   const [authLoading, setAuthLoading] = useState(true)
@@ -377,6 +381,8 @@ export function AddListingForm({ initialData }: { initialData?: RealtorListingRo
 
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
+  const [coords, setCoords] = useState({ lat: initialData?.lat ?? 0, lng: initialData?.lng ?? 0 })
+  const [geoStatus, setGeoStatus] = useState<"idle" | "loading" | "found" | "error">("idle")
 
   // Auth check — use getSession() (reads cached session) so user_metadata.role
   // is always present immediately after sign-up, unlike getUser() which makes
@@ -483,7 +489,8 @@ export function AddListingForm({ initialData }: { initialData?: RealtorListingRo
 
   const buildPayload = async (
     supabase: ReturnType<typeof createClient>,
-    overrideStatus?: FormState["status"]
+    overrideStatus?: FormState["status"],
+    overrideCoords?: { lat: number; lng: number }
   ) => {
     const newPhotoUrls = await Promise.all(
       photoFiles.map(async (file, i) => {
@@ -550,8 +557,8 @@ export function AddListingForm({ initialData }: { initialData?: RealtorListingRo
         state: form.state,
         zip: form.zip || null,
         neighborhood: form.neighborhood,
-        lat: initialData?.lat ?? 0,
-        lng: initialData?.lng ?? 0,
+        lat: (overrideCoords ?? coords).lat,
+        lng: (overrideCoords ?? coords).lng,
         photo_urls: allPhotoUrls,
         image_url: allPhotoUrls[0] ?? "",
         video_url: videoUrl,
@@ -602,6 +609,41 @@ export function AddListingForm({ initialData }: { initialData?: RealtorListingRo
     }
   }
 
+  // ── Geocode address → lat/lng ──────────────────────────────────────────────
+
+  const geocodeAddress = async (
+    streetAddress: string,
+    city: string,
+    state: string,
+    zip: string
+  ): Promise<{ lat: number; lng: number } | null> => {
+    const parts = [streetAddress, city, state, zip].filter(Boolean)
+    if (parts.length < 2) return null
+    try {
+      const res = await fetch("/api/geocode", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ address: parts.join(", ") }),
+      })
+      const { lat, lng } = await res.json()
+      if (lat && lng) return { lat, lng }
+      return null
+    } catch {
+      return null
+    }
+  }
+
+  const handleGeocode = async () => {
+    setGeoStatus("loading")
+    const result = await geocodeAddress(form.streetAddress, form.city, form.state, form.zip)
+    if (result) {
+      setCoords(result)
+      setGeoStatus("found")
+    } else {
+      setGeoStatus("error")
+    }
+  }
+
   // ── Submit (publish / update) ──────────────────────────────────────────────
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -626,7 +668,18 @@ export function AddListingForm({ initialData }: { initialData?: RealtorListingRo
 
     try {
       const supabase = createClient()
-      const { fields } = await buildPayload(supabase)
+
+      let resolvedCoords = coords
+      if (resolvedCoords.lat === 0 && resolvedCoords.lng === 0) {
+        const geo = await geocodeAddress(form.streetAddress, form.city, form.state, form.zip)
+        if (geo) {
+          resolvedCoords = geo
+          setCoords(geo)
+          setGeoStatus("found")
+        }
+      }
+
+      const { fields } = await buildPayload(supabase, isDraft ? "active" : undefined, resolvedCoords)
 
       if (isEditMode) {
         const { error: updateErr } = await supabase
@@ -661,7 +714,18 @@ export function AddListingForm({ initialData }: { initialData?: RealtorListingRo
 
     try {
       const supabase = createClient()
-      const { fields } = await buildPayload(supabase, "draft")
+
+      let resolvedCoords = coords
+      if (resolvedCoords.lat === 0 && resolvedCoords.lng === 0) {
+        const geo = await geocodeAddress(form.streetAddress, form.city, form.state, form.zip)
+        if (geo) {
+          resolvedCoords = geo
+          setCoords(geo)
+          setGeoStatus("found")
+        }
+      }
+
+      const { fields } = await buildPayload(supabase, "draft", resolvedCoords)
 
       if (isEditMode) {
         const { error: updateErr } = await supabase
@@ -818,8 +882,18 @@ export function AddListingForm({ initialData }: { initialData?: RealtorListingRo
                 <TextInput
                   value={form.zip}
                   onChange={(v) => setField("zip", v)}
+                  onBlur={handleGeocode}
                   placeholder="11215"
                 />
+                {geoStatus === "loading" && (
+                  <p className="text-xs text-gray-400 mt-1">Finding location…</p>
+                )}
+                {geoStatus === "found" && (
+                  <p className="text-xs text-green-600 mt-1">✓ Location found</p>
+                )}
+                {geoStatus === "error" && (
+                  <p className="text-xs text-amber-500 mt-1">Couldn&apos;t pinpoint address — listing will still save</p>
+                )}
               </div>
             </div>
 
@@ -1537,7 +1611,7 @@ export function AddListingForm({ initialData }: { initialData?: RealtorListingRo
                 {loading
                   ? "Saving…"
                   : isEditMode
-                    ? "Save Changes"
+                    && !isDraft ? "Save Changes"
                     : "Post Listing"}
               </button>
             </div>

@@ -180,10 +180,59 @@ export default function ProfilePage() {
           {/* Manage Listings (realtor only) */}
           {isRealtor && (() => {
             const published = realtorListings.filter((l) => l.status !== "draft")
+            const forRent = published.filter((l) => l.listing_type === "rent")
+            const forSale = published.filter((l) => l.listing_type === "sale")
             const drafts = realtorListings.filter((l) => l.status === "draft")
+
+            const renderPublishedRow = (listing: RealtorListingRow) => (
+              <li key={listing.id} className="flex items-center justify-between px-6 py-4 gap-3">
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-semibold text-gray-900 truncate">{listing.title}</p>
+                  <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+                    <p className="text-xs text-gray-400">
+                      ${listing.price.toLocaleString()}{listing.listing_type === "rent" ? "/mo" : ""} · {listing.neighborhood}
+                    </p>
+                    {listing.status === "off-market" && (
+                      <span className="text-xs font-semibold text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full">
+                        Delisted
+                      </span>
+                    )}
+                  </div>
+                </div>
+                <div className="flex items-center gap-1 flex-shrink-0">
+                  <Link
+                    href={`/listings/${listing.id}/edit`}
+                    className="w-8 h-8 flex items-center justify-center rounded-full text-gray-400 hover:text-[#c9a96e] hover:bg-[#c9a96e]/10 transition-colors"
+                    aria-label="Edit listing"
+                  >
+                    <i className="fa-solid fa-pen text-xs" />
+                  </Link>
+                  <button
+                    onClick={() => handleDelistToggle(listing)}
+                    className={`w-8 h-8 flex items-center justify-center rounded-full transition-colors ${
+                      listing.status === "off-market"
+                        ? "text-green-500 hover:bg-green-50"
+                        : "text-gray-400 hover:text-orange-500 hover:bg-orange-50"
+                    }`}
+                    aria-label={listing.status === "off-market" ? "Relist listing" : "Delist listing"}
+                    title={listing.status === "off-market" ? "Relist" : "Delist"}
+                  >
+                    <i className={`fa-solid ${listing.status === "off-market" ? "fa-eye" : "fa-eye-slash"} text-xs`} />
+                  </button>
+                  <button
+                    onClick={() => handleDeleteListing(listing.id)}
+                    className="w-8 h-8 flex items-center justify-center rounded-full text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors"
+                    aria-label="Delete listing"
+                  >
+                    <i className="fa-solid fa-trash text-xs" />
+                  </button>
+                </div>
+              </li>
+            )
+
             return (
               <>
-                {/* Published listings */}
+                {/* Manage Listings */}
                 <div className="mt-6 bg-white rounded-2xl border border-gray-100 shadow-sm">
                   <div className="px-6 py-4 border-b border-gray-100">
                     <span className="text-sm font-bold text-gray-900">Manage Listings</span>
@@ -194,53 +243,28 @@ export default function ProfilePage() {
                   ) : published.length === 0 ? (
                     <p className="px-6 py-5 text-sm text-gray-400">No listings yet.</p>
                   ) : (
-                    <ul className="divide-y divide-gray-100">
-                      {published.map((listing) => (
-                        <li key={listing.id} className="flex items-center justify-between px-6 py-4 gap-3">
-                          <div className="min-w-0 flex-1">
-                            <p className="text-sm font-semibold text-gray-900 truncate">{listing.title}</p>
-                            <div className="flex items-center gap-2 mt-0.5 flex-wrap">
-                              <p className="text-xs text-gray-400">
-                                ${listing.price.toLocaleString()}/mo · {listing.neighborhood}
-                              </p>
-                              {listing.status === "off-market" && (
-                                <span className="text-xs font-semibold text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full">
-                                  Delisted
-                                </span>
-                              )}
-                            </div>
+                    <div className="divide-y divide-gray-100">
+                      {forRent.length > 0 && (
+                        <div>
+                          <div className="px-6 py-2 bg-gray-50">
+                            <span className="text-[11px] font-bold text-gray-400 uppercase tracking-wider">For Rent</span>
                           </div>
-                          <div className="flex items-center gap-1 flex-shrink-0">
-                            <Link
-                              href={`/listings/${listing.id}/edit`}
-                              className="w-8 h-8 flex items-center justify-center rounded-full text-gray-400 hover:text-[#c9a96e] hover:bg-[#c9a96e]/10 transition-colors"
-                              aria-label="Edit listing"
-                            >
-                              <i className="fa-solid fa-pen text-xs" />
-                            </Link>
-                            <button
-                              onClick={() => handleDelistToggle(listing)}
-                              className={`w-8 h-8 flex items-center justify-center rounded-full transition-colors ${
-                                listing.status === "off-market"
-                                  ? "text-green-500 hover:bg-green-50"
-                                  : "text-gray-400 hover:text-orange-500 hover:bg-orange-50"
-                              }`}
-                              aria-label={listing.status === "off-market" ? "Relist listing" : "Delist listing"}
-                              title={listing.status === "off-market" ? "Relist" : "Delist"}
-                            >
-                              <i className={`fa-solid ${listing.status === "off-market" ? "fa-eye" : "fa-eye-slash"} text-xs`} />
-                            </button>
-                            <button
-                              onClick={() => handleDeleteListing(listing.id)}
-                              className="w-8 h-8 flex items-center justify-center rounded-full text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors"
-                              aria-label="Delete listing"
-                            >
-                              <i className="fa-solid fa-trash text-xs" />
-                            </button>
+                          <ul className="divide-y divide-gray-100">
+                            {forRent.map(renderPublishedRow)}
+                          </ul>
+                        </div>
+                      )}
+                      {forSale.length > 0 && (
+                        <div>
+                          <div className="px-6 py-2 bg-gray-50">
+                            <span className="text-[11px] font-bold text-gray-400 uppercase tracking-wider">For Sale</span>
                           </div>
-                        </li>
-                      ))}
-                    </ul>
+                          <ul className="divide-y divide-gray-100">
+                            {forSale.map(renderPublishedRow)}
+                          </ul>
+                        </div>
+                      )}
+                    </div>
                   )}
                 </div>
 

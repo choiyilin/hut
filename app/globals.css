@@ -23,3 +23,15 @@
 .reel-feed-column::-webkit-scrollbar {
   display: none;
 }
+
+/* ── Listings browse map popup ───────────────────────────────────────────── */
+.hut-map-popup .mapboxgl-popup-content {
+  padding: 0;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.14);
+  border: 1px solid #e5e7eb;
+}
+.hut-map-popup .mapboxgl-popup-tip {
+  border-top-color: #e5e7eb;
+}

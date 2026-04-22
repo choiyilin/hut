@@ -5,7 +5,12 @@ import Link from "next/link"
 import Image from "next/image"
 import type { Listing } from "@/types"
 import { AppNav } from "./AppNav"
-import { ListingMap } from "./ListingMap"
+import dynamic from "next/dynamic"
+
+const ListingMap = dynamic(() => import("./ListingMap"), {
+  ssr: false,
+  loading: () => <div className="w-full h-full bg-gray-100 animate-pulse" />,
+})
 
 interface Props {
   listing: Listing
@@ -122,7 +127,9 @@ export function ListingDetail({ listing }: Props) {
 
               <h1 className="text-4xl font-extrabold text-gray-900 leading-tight mb-1">
                 ${listing.price.toLocaleString()}
-                <span className="text-xl font-medium text-gray-400">/mo</span>
+                {listing.listingType !== "sale" && (
+                  <span className="text-xl font-medium text-gray-400">/mo</span>
+                )}
               </h1>
 
               <p className="text-gray-500 mb-4">{listing.address}</p>
@@ -209,7 +216,9 @@ export function ListingDetail({ listing }: Props) {
             <div className="sticky top-[calc(4rem+1.5rem)] bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
               <p className="text-2xl font-extrabold text-gray-900 mb-1">
                 ${listing.price.toLocaleString()}
-                <span className="text-base font-medium text-gray-400">/mo</span>
+                {listing.listingType !== "sale" && (
+                  <span className="text-base font-medium text-gray-400">/mo</span>
+                )}
               </p>
               <p className="text-sm text-gray-500 mb-6">
                 {bedLabel} · {listing.neighborhood}
