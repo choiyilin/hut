@@ -1,6 +1,6 @@
 export async function POST(req: Request) {
   const { address } = await req.json()
-  const token = process.env.MAPBOX_SECRET_TOKEN
+  const token = process.env.MAPBOX_SECRET_TOKEN ?? process.env.NEXT_PUBLIC_MAPBOX_TOKEN
 
   if (!token || !address?.trim()) {
     return Response.json({ error: "bad request" }, { status: 400 })

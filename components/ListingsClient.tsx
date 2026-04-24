@@ -58,44 +58,66 @@ export function ListingsClient({ initialListings, initialQuery, initialListingTy
 
       <div className="max-w-screen-xl mx-auto px-4 sm:px-6 py-8">
 
-        {/* ── Row 1: heading+search (left) | filter panel (right) ──────────── */}
-        <div className="flex gap-5 items-start mb-6">
-          {/* Heading + search */}
-          <div className="flex-1 min-w-0">
-            <h1 className="text-5xl font-extrabold text-gray-900 mb-1 tracking-tight leading-none">
-              {filters.listingType === "sale" ? "Homes for Sale" : "Browse Rentals"}
-            </h1>
-            <div className="mt-4 relative max-w-xl">
-              <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                <i className="fa-solid fa-magnifying-glass text-gray-300 text-sm" />
-              </div>
-              <input
-                type="text"
-                value={filters.search}
-                onChange={(e) => handleChange({ search: e.target.value })}
-                placeholder="Search neighborhood, address, or keyword…"
-                aria-label="Search listings"
-                autoComplete="off"
-                className="w-full pl-10 pr-10 py-3 bg-white border-2 border-gray-200 rounded-full text-sm font-medium text-gray-800 placeholder:text-gray-400 placeholder:font-normal focus:outline-none focus:ring-2 focus:ring-gray-200 focus:border-gray-400 transition-all"
-              />
-              {filters.search && (
-                <button
-                  onClick={() => handleChange({ search: "" })}
-                  className="absolute inset-y-0 right-0 pr-4 flex items-center text-gray-400 hover:text-gray-600 transition-colors"
-                  aria-label="Clear search"
-                >
-                  <i className="fa-solid fa-xmark text-xs" />
-                </button>
-              )}
-            </div>
-          </div>
+        {/* ── Row 1: heading, then search + filters on same line ──────────── */}
+        <div className="mb-6">
+          <h1 className="text-2xl sm:text-3xl lg:text-5xl font-extrabold text-gray-900 tracking-tight leading-none">
+            {filters.listingType === "sale" ? "Homes for Sale" : "Browse Rentals"}
+          </h1>
 
-          {/* Filter bar — desktop only, top-right */}
+          {/* Desktop: search pill + filter pills on one row */}
           {view === "grid" && (
-            <div className="hidden lg:flex items-end flex-none pb-1">
+            <div className="hidden lg:flex items-center gap-2 mt-4 flex-wrap">
+              <div className="relative flex-none w-64">
+                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                  <i className="fa-solid fa-magnifying-glass text-gray-300 text-sm" />
+                </div>
+                <input
+                  type="text"
+                  value={filters.search}
+                  onChange={(e) => handleChange({ search: e.target.value })}
+                  placeholder="Search neighborhood, address, or keyword…"
+                  aria-label="Search listings"
+                  autoComplete="off"
+                  className="w-full pl-10 pr-10 py-2.5 bg-white border-2 border-gray-200 rounded-full text-sm font-medium text-gray-800 placeholder:text-gray-400 placeholder:font-normal focus:outline-none focus:ring-2 focus:ring-gray-200 focus:border-gray-400 transition-all"
+                />
+                {filters.search && (
+                  <button
+                    onClick={() => handleChange({ search: "" })}
+                    className="absolute inset-y-0 right-0 pr-4 flex items-center text-gray-400 hover:text-gray-600 transition-colors"
+                    aria-label="Clear search"
+                  >
+                    <i className="fa-solid fa-xmark text-xs" />
+                  </button>
+                )}
+              </div>
               <FilterBar filters={filters} onChange={handleChange} onClear={clearAll} />
             </div>
           )}
+
+          {/* Mobile: full-width search input */}
+          <div className="lg:hidden mt-4 relative max-w-xl">
+            <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+              <i className="fa-solid fa-magnifying-glass text-gray-300 text-sm" />
+            </div>
+            <input
+              type="text"
+              value={filters.search}
+              onChange={(e) => handleChange({ search: e.target.value })}
+              placeholder="Search neighborhood, address, or keyword…"
+              aria-label="Search listings"
+              autoComplete="off"
+              className="w-full pl-10 pr-10 py-3 bg-white border-2 border-gray-200 rounded-full text-sm font-medium text-gray-800 placeholder:text-gray-400 placeholder:font-normal focus:outline-none focus:ring-2 focus:ring-gray-200 focus:border-gray-400 transition-all"
+            />
+            {filters.search && (
+              <button
+                onClick={() => handleChange({ search: "" })}
+                className="absolute inset-y-0 right-0 pr-4 flex items-center text-gray-400 hover:text-gray-600 transition-colors"
+                aria-label="Clear search"
+              >
+                <i className="fa-solid fa-xmark text-xs" />
+              </button>
+            )}
+          </div>
         </div>
 
         {/* ── Row 2: controls+grid (left) | map (right, parallel with grid) ── */}
@@ -104,7 +126,7 @@ export function ListingsClient({ initialListings, initialQuery, initialListingTy
           {/* Listings column */}
           <div className="flex-1 min-w-0">
             {/* Controls bar */}
-            <div className="flex items-center justify-between mb-6 gap-3">
+            <div className="flex flex-wrap items-center justify-between mb-4 sm:mb-6 gap-2 sm:gap-3">
               <p className="text-sm font-semibold text-gray-500 flex-shrink-0">
                 <span className="font-extrabold text-gray-900">
                   {view === "reels"

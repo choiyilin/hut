@@ -214,6 +214,8 @@ export interface FilterState {
   amenities: string[]
   sort: SortOption
   listingType: "rent" | "sale"
+  moveInDate: string
+  buildingType: string[]
 }
 
 export const DEFAULT_FILTERS: FilterState = {
@@ -226,6 +228,8 @@ export const DEFAULT_FILTERS: FilterState = {
   amenities: [],
   sort: "newest",
   listingType: "rent",
+  moveInDate: "",
+  buildingType: [],
 }
 
 /** How many filter groups are currently active (for mobile badge) */
@@ -237,6 +241,8 @@ export function countActiveFilters(filters: FilterState): number {
   if (filters.beds.length > 0) count++
   if (filters.baths.length > 0) count++
   if (filters.amenities.length > 0) count++
+  if (filters.moveInDate) count++
+  if (filters.buildingType.length > 0) count++
   return count
 }
 

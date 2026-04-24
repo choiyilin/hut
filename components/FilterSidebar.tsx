@@ -5,24 +5,24 @@ import { NeighborhoodPicker } from "./NeighborhoodPicker"
 // ── Static data ───────────────────────────────────────────────────────────────
 
 export const AMENITIES = [
-  "doorman",
   "laundry in-unit",
-  "laundry in-building",
-  "elevator",
-  "pets allowed",
-  "rooftop",
-  "gym",
   "dishwasher",
-  "central AC",
-  "parking",
-  "balcony",
-  "storage",
-  "accessible",
-  "furnished",
   "outdoor space",
-  "live-in super",
-  "bike room",
-  "pool",
+  "central AC",
+  "furnished",
+  "doorman",
+  "elevator",
+  "laundry in-building",
+  "gym",
+  "parking",
+  "communal outdoor space",
+  "swimming pool/sauna",
+  "children's room",
+  "smoke free",
+  "storage",
+  "pets allowed",
+  "accessible",
+  "guarantors accepted",
 ]
 
 export const BED_OPTIONS: { label: string; value: BedFilter }[] = [
@@ -209,8 +209,10 @@ export function FilterSidebar({ filters, onChange, onClear }: Props) {
 
       {/* ── Amenities ───────────────────────────────────────────── */}
       <SectionLabel>Amenities</SectionLabel>
-      <div className="space-y-2">
-        {AMENITIES.map((a) => (
+
+      <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Unit</p>
+      <div className="space-y-2 mb-4">
+        {["laundry in-unit", "dishwasher", "outdoor space", "central AC", "furnished"].map((a) => (
           <label key={a} className="flex items-center gap-2.5 cursor-pointer group">
             <input
               type="checkbox"
@@ -222,6 +224,80 @@ export function FilterSidebar({ filters, onChange, onClear }: Props) {
               {a}
             </span>
           </label>
+        ))}
+      </div>
+
+      <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Building</p>
+      <div className="space-y-2 mb-4">
+        {["doorman", "elevator", "laundry in-building", "gym", "parking", "communal outdoor space", "swimming pool/sauna", "children's room", "smoke free", "storage"].map((a) => (
+          <label key={a} className="flex items-center gap-2.5 cursor-pointer group">
+            <input
+              type="checkbox"
+              checked={filters.amenities.includes(a)}
+              onChange={() => toggleAmenity(a)}
+              className="w-4 h-4 rounded border-gray-300 cursor-pointer accent-gray-900"
+            />
+            <span className="text-sm font-medium text-gray-700 capitalize group-hover:text-gray-900 transition-colors select-none">
+              {a}
+            </span>
+          </label>
+        ))}
+      </div>
+
+      <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">More</p>
+      <div className="space-y-2">
+        {["pets allowed", "accessible", "guarantors accepted"].map((a) => (
+          <label key={a} className="flex items-center gap-2.5 cursor-pointer group">
+            <input
+              type="checkbox"
+              checked={filters.amenities.includes(a)}
+              onChange={() => toggleAmenity(a)}
+              className="w-4 h-4 rounded border-gray-300 cursor-pointer accent-gray-900"
+            />
+            <span className="text-sm font-medium text-gray-700 capitalize group-hover:text-gray-900 transition-colors select-none">
+              {a}
+            </span>
+          </label>
+        ))}
+      </div>
+
+      <Divider />
+
+      {/* ── More filters ─────────────────────────────────────────── */}
+      <SectionLabel>More</SectionLabel>
+
+      <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Move-in date</p>
+      <input
+        type="date"
+        value={filters.moveInDate}
+        onChange={(e) => onChange({ moveInDate: e.target.value })}
+        className="w-full px-3 py-2 text-sm font-medium border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-gray-200 focus:border-gray-400 mb-4"
+      />
+
+      <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Building type</p>
+      <div className="flex flex-wrap gap-1.5">
+        {[
+          { value: "rental", label: "Rental" },
+          { value: "co-op", label: "Co-op" },
+          { value: "condo", label: "Condo" },
+          { value: "townhouse", label: "Townhouse" },
+        ].map(({ value, label }) => (
+          <button
+            key={value}
+            onClick={() => {
+              const next = filters.buildingType.includes(value)
+                ? filters.buildingType.filter((x) => x !== value)
+                : [...filters.buildingType, value]
+              onChange({ buildingType: next })
+            }}
+            className={`px-3 py-1.5 text-xs font-bold rounded-full border-2 transition-colors ${
+              filters.buildingType.includes(value)
+                ? "bg-gray-900 border-gray-900 text-white"
+                : "bg-white border-gray-200 text-gray-700 hover:border-gray-400"
+            }`}
+          >
+            {label}
+          </button>
         ))}
       </div>
     </div>

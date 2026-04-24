@@ -52,12 +52,11 @@ type FormState = {
   hasElevator: boolean
   hasGym: boolean
   hasPool: boolean
-  hasRooftop: boolean
-  hasPackageRoom: boolean
-  hasBikeRoom: boolean
-  hasEvCharging: boolean
-  hasLiveInSuper: boolean
+  hasCommunalOutdoor: boolean
+  hasChildrensRoom: boolean
+  isSmokeFree: boolean
   isAccessible: boolean
+  guarantorsAccepted: boolean
   acType: "central" | "window" | "none"
   heatType: "electric" | "gas" | "steam" | "radiant" | ""
   utilitiesIncluded: string[]
@@ -112,12 +111,11 @@ const INITIAL_FORM: FormState = {
   hasElevator: false,
   hasGym: false,
   hasPool: false,
-  hasRooftop: false,
-  hasPackageRoom: false,
-  hasBikeRoom: false,
-  hasEvCharging: false,
-  hasLiveInSuper: false,
+  hasCommunalOutdoor: false,
+  hasChildrensRoom: false,
+  isSmokeFree: false,
   isAccessible: false,
+  guarantorsAccepted: false,
   acType: "none",
   heatType: "",
   utilitiesIncluded: [],
@@ -138,22 +136,21 @@ function deriveAmenities(form: FormState): string[] {
   if (form.hasDoorman) derived.push("doorman")
   if (form.hasElevator) derived.push("elevator")
   if (form.hasGym) derived.push("gym")
-  if (form.hasPool) derived.push("pool")
-  if (form.hasRooftop) derived.push("rooftop")
-  if (form.hasBikeRoom) derived.push("bike room")
-  if (form.hasLiveInSuper) derived.push("live-in super")
+  if (form.hasPool) derived.push("swimming pool/sauna")
+  if (form.hasCommunalOutdoor) derived.push("communal outdoor space")
+  if (form.hasChildrensRoom) derived.push("children's room")
+  if (form.isSmokeFree) derived.push("smoke free")
   if (form.isAccessible) derived.push("accessible")
+  if (form.guarantorsAccepted) derived.push("guarantors accepted")
   if (form.laundryType === "in-unit") derived.push("laundry in-unit")
   if (form.laundryType === "in-building") derived.push("laundry in-building")
   if (form.hasDishwasher) derived.push("dishwasher")
   if (form.acType === "central") derived.push("central AC")
   if (form.isFurnished) derived.push("furnished")
   if (form.hasStorage) derived.push("storage")
-  // hasWasherDryer is stored as its own DB column; laundry amenity is driven by laundryType
   if (form.parkingType !== "none") derived.push("parking")
   if (form.hasBalcony || form.hasTerrace || form.hasBackyard || form.hasRoofDeck)
     derived.push("outdoor space")
-  if (form.hasBalcony) derived.push("balcony")
   if (form.petPolicy !== "no-pets") derived.push("pets allowed")
   return [...new Set(derived)]
 }
@@ -216,12 +213,11 @@ function rowToFormState(row: RealtorListingRow): FormState {
     hasElevator: row.has_elevator,
     hasGym: row.has_gym,
     hasPool: row.has_pool,
-    hasRooftop: row.has_rooftop,
-    hasPackageRoom: row.has_package_room,
-    hasBikeRoom: row.has_bike_room,
-    hasEvCharging: row.has_ev_charging,
-    hasLiveInSuper: row.has_live_in_super,
+    hasCommunalOutdoor: row.amenities?.includes("communal outdoor space") ?? false,
+    hasChildrensRoom: row.amenities?.includes("children's room") ?? false,
+    isSmokeFree: row.amenities?.includes("smoke free") ?? false,
     isAccessible: row.is_accessible,
+    guarantorsAccepted: row.amenities?.includes("guarantors accepted") ?? false,
     acType: (row.ac_type as FormState["acType"]) ?? "none",
     heatType: (row.heat_type as FormState["heatType"]) ?? "",
     utilitiesIncluded: row.utilities_included ?? [],
@@ -589,11 +585,6 @@ export function AddListingForm({ initialData }: { initialData?: RealtorListingRo
         has_elevator: form.hasElevator,
         has_gym: form.hasGym,
         has_pool: form.hasPool,
-        has_rooftop: form.hasRooftop,
-        has_package_room: form.hasPackageRoom,
-        has_bike_room: form.hasBikeRoom,
-        has_ev_charging: form.hasEvCharging,
-        has_live_in_super: form.hasLiveInSuper,
         is_accessible: form.isAccessible,
         ac_type: form.acType,
         heat_type: form.heatType || null,
@@ -1393,13 +1384,12 @@ export function AddListingForm({ initialData }: { initialData?: RealtorListingRo
               <CheckboxField label="Doorman" checked={form.hasDoorman} onChange={(v) => setField("hasDoorman", v)} />
               <CheckboxField label="Elevator" checked={form.hasElevator} onChange={(v) => setField("hasElevator", v)} />
               <CheckboxField label="Gym" checked={form.hasGym} onChange={(v) => setField("hasGym", v)} />
-              <CheckboxField label="Pool" checked={form.hasPool} onChange={(v) => setField("hasPool", v)} />
-              <CheckboxField label="Rooftop" checked={form.hasRooftop} onChange={(v) => setField("hasRooftop", v)} />
-              <CheckboxField label="Package room" checked={form.hasPackageRoom} onChange={(v) => setField("hasPackageRoom", v)} />
-              <CheckboxField label="Bike storage" checked={form.hasBikeRoom} onChange={(v) => setField("hasBikeRoom", v)} />
-              <CheckboxField label="EV charging" checked={form.hasEvCharging} onChange={(v) => setField("hasEvCharging", v)} />
-              <CheckboxField label="Live-in super" checked={form.hasLiveInSuper} onChange={(v) => setField("hasLiveInSuper", v)} />
+              <CheckboxField label="Swimming pool/sauna" checked={form.hasPool} onChange={(v) => setField("hasPool", v)} />
+              <CheckboxField label="Communal outdoor space" checked={form.hasCommunalOutdoor} onChange={(v) => setField("hasCommunalOutdoor", v)} />
+              <CheckboxField label="Children's room" checked={form.hasChildrensRoom} onChange={(v) => setField("hasChildrensRoom", v)} />
+              <CheckboxField label="Smoke free" checked={form.isSmokeFree} onChange={(v) => setField("isSmokeFree", v)} />
               <CheckboxField label="ADA accessible" checked={form.isAccessible} onChange={(v) => setField("isAccessible", v)} />
+              <CheckboxField label="Guarantors accepted" checked={form.guarantorsAccepted} onChange={(v) => setField("guarantorsAccepted", v)} />
             </div>
           </SectionCard>
 

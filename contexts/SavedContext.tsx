@@ -28,7 +28,10 @@ const loadFromStorage = (userId: string | null): Set<string> => {
 }
 
 export function SavedProvider({ children }: { children: React.ReactNode }) {
-  const [savedIds, setSavedIds] = useState<Set<string>>(new Set())
+  const [savedIds, setSavedIds] = useState<Set<string>>(() => {
+    if (typeof window === "undefined") return new Set()
+    return loadFromStorage(null)
+  })
   // Ref so toggleSaved always writes to the correct user's key
   const userIdRef = useRef<string | null>(null)
 

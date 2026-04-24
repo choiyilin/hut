@@ -1,4 +1,4 @@
-import { createClient } from "@supabase/supabase-js"
+import { createClient } from "@/lib/supabase/server"
 
 async function geocode(address: string, token: string): Promise<[number, number] | null> {
   const url = new URL(
@@ -16,18 +16,13 @@ async function geocode(address: string, token: string): Promise<[number, number]
 }
 
 export async function POST() {
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY
-  const mapboxToken = process.env.MAPBOX_SECRET_TOKEN
+  const mapboxToken = process.env.MAPBOX_SECRET_TOKEN ?? process.env.NEXT_PUBLIC_MAPBOX_TOKEN
 
-  if (!supabaseUrl || !serviceRoleKey || !mapboxToken) {
-    return Response.json(
-      { error: "Missing SUPABASE_SERVICE_ROLE_KEY or MAPBOX_SECRET_TOKEN in .env.local" },
-      { status: 500 }
-    )
+  if (!mapboxToken) {
+    return Response.json({ error: "Missing Mapbox token in .env.local" }, { status: 500 })
   }
 
-  const supabase = createClient(supabaseUrl, serviceRoleKey)
+  const supabase = await createClient()
 
   const { data: rows, error: fetchErr } = await supabase
     .from("realtor_listings")

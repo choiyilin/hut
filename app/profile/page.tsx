@@ -42,9 +42,15 @@ export default function ProfilePage() {
       .select("*")
       .eq("user_id", user.id)
       .order("date_posted", { ascending: false })
-      .then(({ data }) => {
-        setRealtorListings((data ?? []) as RealtorListingRow[])
+      .then(async ({ data }) => {
+        const listings = (data ?? []) as RealtorListingRow[]
+        setRealtorListings(listings)
         setRealtorLoading(false)
+
+        const missing = listings.filter((l) => l.lat === 0 && l.lng === 0)
+        if (missing.length === 0) return
+
+        await fetch("/api/geocode/backfill", { method: "POST" })
       })
   }, [user])
 
