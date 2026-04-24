@@ -91,10 +91,30 @@ export default defineConfig([
     rules: { "no-restricted-syntax": "off" },
   },
 
-  // Config files and scripts may use console; loosen strict rules.
+  // Config files (Vitest, Playwright, etc.) and scripts may read process.env
+  // and use console — they run outside the app.
   {
-    files: ["*.config.*", "scripts/**/*"],
-    rules: { "no-console": "off" },
+    files: ["*.config.{ts,mjs,cjs,js}", "scripts/**/*"],
+    rules: {
+      "no-console": "off",
+      "no-restricted-syntax": "off",
+    },
+  },
+
+  // Test files — allow process.env (rare, mostly for skip flags) but keep the
+  // `as` ban so tests exercise real types. Disable the deprecated-API warning
+  // because Testing Library matchers occasionally emit them.
+  {
+    files: ["tests/**/*.{ts,tsx}", "src/**/*.{test,spec}.{ts,tsx}"],
+    rules: {
+      "no-restricted-syntax": [
+        "error",
+        {
+          selector: "TSAsExpression:not([typeAnnotation.type='TSLiteralType'])",
+          message: "Use Zod to parse fixtures, or `as const` for literals.",
+        },
+      ],
+    },
   },
 
   // Phase 0 transition: disable the strictest bans for legacy paths that will be
