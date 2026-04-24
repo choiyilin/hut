@@ -16,6 +16,7 @@ export default defineConfig([
     "eslint.config.mjs",
     "postcss.config.mjs",
     "next.config.ts",
+    "commitlint.config.mjs",
   ]),
 
   js.configs.recommended,
