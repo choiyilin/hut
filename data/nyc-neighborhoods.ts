@@ -177,10 +177,7 @@ export const NYC_BOROUGHS: BoroughData[] = [
       },
       {
         area: "Bushwick",
-        neighborhoods: [
-          { name: "Bushwick" },
-          { name: "Ridgewood" },
-        ],
+        neighborhoods: [{ name: "Bushwick" }, { name: "Ridgewood" }],
       },
       {
         area: "Bed-Stuy / Crown Heights",
@@ -355,11 +352,7 @@ export const NYC_BOROUGHS: BoroughData[] = [
       },
       {
         area: "Essex County",
-        neighborhoods: [
-          { name: "Newark" },
-          { name: "Montclair" },
-          { name: "Bloomfield" },
-        ],
+        neighborhoods: [{ name: "Newark" }, { name: "Montclair" }, { name: "Bloomfield" }],
       },
     ],
   },
@@ -367,5 +360,5 @@ export const NYC_BOROUGHS: BoroughData[] = [
 
 /** Flat list of all neighborhood names — used for search suggestions and NTA map matching */
 export const ALL_NYC_NEIGHBORHOODS: string[] = NYC_BOROUGHS.flatMap((b) =>
-  b.areas.flatMap((a) => a.neighborhoods.map((n) => n.name))
+  b.areas.flatMap((a) => a.neighborhoods.map((n) => n.name)),
 )

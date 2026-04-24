@@ -159,9 +159,7 @@ function deriveAmenities(form: FormState): string[] {
 
 function parseStreetAddress(row: RealtorListingRow): string {
   let addr = row.address
-  const tail = [row.city, `${row.state ?? ""} ${row.zip ?? ""}`.trim()]
-    .filter(Boolean)
-    .join(", ")
+  const tail = [row.city, `${row.state ?? ""} ${row.zip ?? ""}`.trim()].filter(Boolean).join(", ")
   if (tail && addr.endsWith(`, ${tail}`)) addr = addr.slice(0, addr.length - tail.length - 2)
   if (row.unit_number) {
     const unit = `, Apt ${row.unit_number}`
@@ -175,7 +173,7 @@ function rowToFormState(row: RealtorListingRow): FormState {
   return {
     listingType: (row.listing_type as FormState["listingType"]) ?? "rent",
     propertyType: (row.property_type as FormState["propertyType"]) ?? "apartment",
-    status: (row.status as FormState["status"]) ?? "active",
+    status: row.status! ?? "active",
     streetAddress: parseStreetAddress(row),
     unitNumber: row.unit_number ?? "",
     city: row.city ?? "New York",
@@ -228,7 +226,7 @@ function rowToFormState(row: RealtorListingRow): FormState {
     description: row.description ?? "",
     availableDate: row.available_date ?? "",
     leaseTerms: row.lease_terms ?? [],
-    openHouseSlots: (row.open_house_slots as FormState["openHouseSlots"]) ?? [],
+    openHouseSlots: row.open_house_slots ?? [],
   }
 }
 
@@ -236,7 +234,7 @@ function rowToFormState(row: RealtorListingRow): FormState {
 
 function SectionCard({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-5">
+    <div className="space-y-5 rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
       <h2 className="text-base font-bold text-gray-900">{title}</h2>
       {children}
     </div>
@@ -245,9 +243,9 @@ function SectionCard({ title, children }: { title: string; children: React.React
 
 function FieldLabel({ children, required }: { children: React.ReactNode; required?: boolean }) {
   return (
-    <p className="text-sm font-medium text-gray-700 mb-1.5">
+    <p className="mb-1.5 text-sm font-medium text-gray-700">
       {children}
-      {required && <span className="text-red-400 ml-0.5">*</span>}
+      {required && <span className="ml-0.5 text-red-400">*</span>}
     </p>
   )
 }
@@ -283,7 +281,7 @@ function TextInput({
       onChange={(e) => onChange(e.target.value)}
       onBlur={onBlur}
       placeholder={placeholder}
-      className={`w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#c9a96e] text-sm ${className ?? ""}`}
+      className={`w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm focus:ring-2 focus:ring-[#c9a96e] focus:outline-none ${className ?? ""}`}
     />
   )
 }
@@ -308,10 +306,10 @@ function Pills<T>({
           type="button"
           onClick={() => onChange(opt.value)}
           className={[
-            `${sz} rounded-full font-semibold border-2 transition-colors`,
+            `${sz} rounded-full border-2 font-semibold transition-colors`,
             value === opt.value
-              ? "bg-gray-900 border-gray-900 text-white"
-              : "bg-white border-gray-200 text-gray-700 hover:border-gray-400",
+              ? "border-gray-900 bg-gray-900 text-white"
+              : "border-gray-200 bg-white text-gray-700 hover:border-gray-400",
           ].join(" ")}
         >
           {opt.label}
@@ -331,14 +329,14 @@ function CheckboxField({
   onChange: (v: boolean) => void
 }) {
   return (
-    <label className="flex items-center gap-2.5 cursor-pointer group">
+    <label className="group flex cursor-pointer items-center gap-2.5">
       <input
         type="checkbox"
         checked={checked}
         onChange={(e) => onChange(e.target.checked)}
-        className="w-4 h-4 rounded border-gray-300 cursor-pointer accent-[#c9a96e]"
+        className="h-4 w-4 cursor-pointer rounded border-gray-300 accent-[#c9a96e]"
       />
-      <span className="text-sm font-medium text-gray-700 capitalize group-hover:text-gray-900 transition-colors select-none">
+      <span className="text-sm font-medium text-gray-700 capitalize transition-colors select-none group-hover:text-gray-900">
         {label}
       </span>
     </label>
@@ -349,13 +347,13 @@ function CheckboxField({
 
 export function AddListingForm({ initialData }: { initialData?: RealtorListingRow }) {
   const isEditMode = !!initialData
-  const isDraft = isEditMode && initialData?.status === 'draft'
+  const isDraft = isEditMode && initialData?.status === "draft"
   const router = useRouter()
   const [user, setUser] = useState<User | null>(null)
   const [authLoading, setAuthLoading] = useState(true)
 
   const [form, setForm] = useState<FormState>(
-    initialData ? rowToFormState(initialData) : INITIAL_FORM
+    initialData ? rowToFormState(initialData) : INITIAL_FORM,
   )
   const setField = <K extends keyof FormState>(key: K, value: FormState[K]) =>
     setForm((prev) => ({ ...prev, [key]: value }))
@@ -363,7 +361,7 @@ export function AddListingForm({ initialData }: { initialData?: RealtorListingRo
   // Photo / media state
   // existingPhotoUrls: already-uploaded URLs kept from the original listing (edit mode)
   const [existingPhotoUrls, setExistingPhotoUrls] = useState<string[]>(
-    initialData?.photo_urls ?? []
+    initialData?.photo_urls ?? [],
   )
   const [photoFiles, setPhotoFiles] = useState<File[]>([])
   const [previewUrls, setPreviewUrls] = useState<string[]>([])
@@ -398,10 +396,9 @@ export function AddListingForm({ initialData }: { initialData?: RealtorListingRo
   // Auto-compose title from street address + unit
   useEffect(() => {
     if (form.titleIsManual) return
-    const parts = [
-      form.streetAddress,
-      form.unitNumber ? `Apt ${form.unitNumber}` : "",
-    ].filter(Boolean)
+    const parts = [form.streetAddress, form.unitNumber ? `Apt ${form.unitNumber}` : ""].filter(
+      Boolean,
+    )
     setForm((prev) => ({ ...prev, title: parts.join(", ") }))
   }, [form.streetAddress, form.unitNumber, form.titleIsManual])
 
@@ -420,7 +417,10 @@ export function AddListingForm({ initialData }: { initialData?: RealtorListingRo
     const oversized: string[] = []
     const valid = Array.from(files).filter((f) => {
       if (!f.type.startsWith("image/")) return false
-      if (f.size > MAX_BYTES) { oversized.push(f.name); return false }
+      if (f.size > MAX_BYTES) {
+        oversized.push(f.name)
+        return false
+      }
       return true
     })
     if (oversized.length > 0)
@@ -453,7 +453,7 @@ export function AddListingForm({ initialData }: { initialData?: RealtorListingRo
       "utilitiesIncluded",
       form.utilitiesIncluded.includes(u)
         ? form.utilitiesIncluded.filter((x) => x !== u)
-        : [...form.utilitiesIncluded, u]
+        : [...form.utilitiesIncluded, u],
     )
   }
 
@@ -462,7 +462,7 @@ export function AddListingForm({ initialData }: { initialData?: RealtorListingRo
       "leaseTerms",
       form.leaseTerms.includes(t)
         ? form.leaseTerms.filter((x) => x !== t)
-        : [...form.leaseTerms, t]
+        : [...form.leaseTerms, t],
     )
   }
 
@@ -474,12 +474,15 @@ export function AddListingForm({ initialData }: { initialData?: RealtorListingRo
   const updateOpenHouseSlot = (i: number, key: keyof OpenHouseSlot, val: string) => {
     setField(
       "openHouseSlots",
-      form.openHouseSlots.map((s, j) => (j === i ? { ...s, [key]: val } : s))
+      form.openHouseSlots.map((s, j) => (j === i ? { ...s, [key]: val } : s)),
     )
   }
 
   const removeOpenHouseSlot = (i: number) => {
-    setField("openHouseSlots", form.openHouseSlots.filter((_, j) => j !== i))
+    setField(
+      "openHouseSlots",
+      form.openHouseSlots.filter((_, j) => j !== i),
+    )
   }
 
   // ── Shared upload + persist logic ─────────────────────────────────────────
@@ -487,7 +490,7 @@ export function AddListingForm({ initialData }: { initialData?: RealtorListingRo
   const buildPayload = async (
     supabase: ReturnType<typeof createClient>,
     overrideStatus?: FormState["status"],
-    overrideCoords?: { lat: number; lng: number }
+    overrideCoords?: { lat: number; lng: number },
   ) => {
     const newPhotoUrls = await Promise.all(
       photoFiles.map(async (file, i) => {
@@ -498,7 +501,7 @@ export function AddListingForm({ initialData }: { initialData?: RealtorListingRo
           .upload(path, file, { upsert: true })
         if (uploadErr) throw new Error(`Photo upload failed: ${uploadErr.message}`)
         return supabase.storage.from("listing-photos").getPublicUrl(path).data.publicUrl
-      })
+      }),
     )
     const allPhotoUrls = [...existingPhotoUrls, ...newPhotoUrls]
 
@@ -521,9 +524,7 @@ export function AddListingForm({ initialData }: { initialData?: RealtorListingRo
         .from("listing-floor-plans")
         .upload(path, floorPlanFile, { upsert: true })
       if (uploadErr) throw new Error(`Floor plan upload failed: ${uploadErr.message}`)
-      floorPlanUrl = supabase.storage
-        .from("listing-floor-plans")
-        .getPublicUrl(path).data.publicUrl
+      floorPlanUrl = supabase.storage.from("listing-floor-plans").getPublicUrl(path).data.publicUrl
     }
 
     const amenities = deriveAmenities(form)
@@ -607,7 +608,7 @@ export function AddListingForm({ initialData }: { initialData?: RealtorListingRo
     streetAddress: string,
     city: string,
     state: string,
-    zip: string
+    zip: string,
   ): Promise<{ lat: number; lng: number } | null> => {
     const parts = [streetAddress, city, state, zip].filter(Boolean)
     if (parts.length < 2) return null
@@ -671,13 +672,17 @@ export function AddListingForm({ initialData }: { initialData?: RealtorListingRo
         }
       }
 
-      const { fields } = await buildPayload(supabase, isDraft ? "active" : undefined, resolvedCoords)
+      const { fields } = await buildPayload(
+        supabase,
+        isDraft ? "active" : undefined,
+        resolvedCoords,
+      )
 
       if (isEditMode) {
         const { error: updateErr } = await supabase
           .from("realtor_listings")
           .update(fields)
-          .eq("id", initialData!.id)
+          .eq("id", initialData.id)
           .eq("user_id", user.id)
         if (updateErr) throw new Error(updateErr.message)
       } else {
@@ -723,7 +728,7 @@ export function AddListingForm({ initialData }: { initialData?: RealtorListingRo
         const { error: updateErr } = await supabase
           .from("realtor_listings")
           .update(fields)
-          .eq("id", initialData!.id)
+          .eq("id", initialData.id)
           .eq("user_id", user.id)
         if (updateErr) throw new Error(updateErr.message)
       } else {
@@ -753,21 +758,20 @@ export function AddListingForm({ initialData }: { initialData?: RealtorListingRo
 
   return (
     <div className="min-h-screen bg-[#f0e9dc] px-4 py-10">
-      <div className="max-w-3xl mx-auto">
-
+      <div className="mx-auto max-w-3xl">
         {/* Header */}
         <div className="mb-8">
           <Link
             href="/profile"
-            className="inline-flex items-center gap-2 text-sm font-semibold text-[#c9a96e] hover:underline mb-4"
+            className="mb-4 inline-flex items-center gap-2 text-sm font-semibold text-[#c9a96e] hover:underline"
           >
             <i className="fa-solid fa-arrow-left text-xs" />
             Back to Profile
           </Link>
-          <h1 className="text-4xl font-extrabold text-gray-900 tracking-tight">
+          <h1 className="text-4xl font-extrabold tracking-tight text-gray-900">
             {isEditMode ? "Edit Listing" : "Post a Listing"}
           </h1>
-          <p className="mt-1 text-gray-500 text-sm">
+          <p className="mt-1 text-sm text-gray-500">
             {isEditMode
               ? "Update your listing details below."
               : "Fill in the details to list your property in the HUT marketplace."}
@@ -775,7 +779,6 @@ export function AddListingForm({ initialData }: { initialData?: RealtorListingRo
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
-
           {/* ── 1. Listing Type ──────────────────────────────────────────── */}
           <SectionCard title="Listing Type">
             <div>
@@ -787,10 +790,10 @@ export function AddListingForm({ initialData }: { initialData?: RealtorListingRo
                     type="button"
                     onClick={() => setField("listingType", v)}
                     className={[
-                      "flex-1 py-3 rounded-xl text-base font-bold border-2 transition-colors",
+                      "flex-1 rounded-xl border-2 py-3 text-base font-bold transition-colors",
                       form.listingType === v
-                        ? "bg-gray-900 border-gray-900 text-white"
-                        : "bg-white border-gray-200 text-gray-700 hover:border-gray-400",
+                        ? "border-gray-900 bg-gray-900 text-white"
+                        : "border-gray-200 bg-white text-gray-700 hover:border-gray-400",
                     ].join(" ")}
                   >
                     {v === "rent" ? "For Rent" : "For Sale"}
@@ -802,14 +805,16 @@ export function AddListingForm({ initialData }: { initialData?: RealtorListingRo
             <div>
               <FieldLabel>Property Type</FieldLabel>
               <Pills
-                options={[
-                  { label: "Apartment", value: "apartment" },
-                  { label: "House", value: "house" },
-                  { label: "Condo", value: "condo" },
-                  { label: "Townhouse", value: "townhouse" },
-                  { label: "Co-op", value: "co-op" },
-                  { label: "Multi-family", value: "multi-family" },
-                ] as { label: string; value: FormState["propertyType"] }[]}
+                options={
+                  [
+                    { label: "Apartment", value: "apartment" },
+                    { label: "House", value: "house" },
+                    { label: "Condo", value: "condo" },
+                    { label: "Townhouse", value: "townhouse" },
+                    { label: "Co-op", value: "co-op" },
+                    { label: "Multi-family", value: "multi-family" },
+                  ] as { label: string; value: FormState["propertyType"] }[]
+                }
                 value={form.propertyType}
                 onChange={(v) => setField("propertyType", v)}
               />
@@ -818,11 +823,13 @@ export function AddListingForm({ initialData }: { initialData?: RealtorListingRo
             <div>
               <FieldLabel>Status</FieldLabel>
               <Pills
-                options={[
-                  { label: "Active", value: "active" },
-                  { label: "Pending", value: "pending" },
-                  { label: "Off Market", value: "off-market" },
-                ] as { label: string; value: FormState["status"] }[]}
+                options={
+                  [
+                    { label: "Active", value: "active" },
+                    { label: "Pending", value: "pending" },
+                    { label: "Off Market", value: "off-market" },
+                  ] as { label: string; value: FormState["status"] }[]
+                }
                 value={form.status}
                 onChange={(v) => setField("status", v)}
                 size="sm"
@@ -878,13 +885,15 @@ export function AddListingForm({ initialData }: { initialData?: RealtorListingRo
                   placeholder="11215"
                 />
                 {geoStatus === "loading" && (
-                  <p className="text-xs text-gray-400 mt-1">Finding location…</p>
+                  <p className="mt-1 text-xs text-gray-400">Finding location…</p>
                 )}
                 {geoStatus === "found" && (
-                  <p className="text-xs text-green-600 mt-1">✓ Location found</p>
+                  <p className="mt-1 text-xs text-green-600">✓ Location found</p>
                 )}
                 {geoStatus === "error" && (
-                  <p className="text-xs text-amber-500 mt-1">Couldn&apos;t pinpoint address — listing will still save</p>
+                  <p className="mt-1 text-xs text-amber-500">
+                    Couldn&apos;t pinpoint address — listing will still save
+                  </p>
                 )}
               </div>
             </div>
@@ -895,9 +904,11 @@ export function AddListingForm({ initialData }: { initialData?: RealtorListingRo
                 required
                 value={form.neighborhood}
                 onChange={(e) => setField("neighborhood", e.target.value)}
-                className="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#c9a96e] text-sm bg-white"
+                className="w-full rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm focus:ring-2 focus:ring-[#c9a96e] focus:outline-none"
               >
-                <option value="" disabled>Select a neighborhood…</option>
+                <option value="" disabled>
+                  Select a neighborhood…
+                </option>
                 {NYC_BOROUGHS.map((borough) =>
                   borough.areas.map((area) => (
                     <optgroup
@@ -910,7 +921,7 @@ export function AddListingForm({ initialData }: { initialData?: RealtorListingRo
                         </option>
                       ))}
                     </optgroup>
-                  ))
+                  )),
                 )}
               </select>
             </div>
@@ -937,7 +948,7 @@ export function AddListingForm({ initialData }: { initialData?: RealtorListingRo
                 {form.listingType === "rent" ? "Monthly Rent" : "Asking Price"} ($)
               </FieldLabel>
               <div className="relative">
-                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-sm pointer-events-none">
+                <span className="pointer-events-none absolute top-1/2 left-4 -translate-y-1/2 text-sm text-gray-400">
                   $
                 </span>
                 <input
@@ -947,7 +958,7 @@ export function AddListingForm({ initialData }: { initialData?: RealtorListingRo
                   value={form.price}
                   onChange={(e) => setField("price", e.target.value)}
                   placeholder={form.listingType === "rent" ? "2800" : "750000"}
-                  className="w-full pl-8 pr-4 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#c9a96e] text-sm"
+                  className="w-full rounded-xl border border-gray-200 py-2.5 pr-4 pl-8 text-sm focus:ring-2 focus:ring-[#c9a96e] focus:outline-none"
                 />
               </div>
               {pricePerSqft && (
@@ -1031,13 +1042,15 @@ export function AddListingForm({ initialData }: { initialData?: RealtorListingRo
             <div>
               <FieldLabel required>Bedrooms</FieldLabel>
               <Pills
-                options={[
-                  { label: "Studio", value: 0 },
-                  { label: "1", value: 1 },
-                  { label: "2", value: 2 },
-                  { label: "3", value: 3 },
-                  { label: "4+", value: 4 },
-                ] as { label: string; value: number }[]}
+                options={
+                  [
+                    { label: "Studio", value: 0 },
+                    { label: "1", value: 1 },
+                    { label: "2", value: 2 },
+                    { label: "3", value: 3 },
+                    { label: "4+", value: 4 },
+                  ] as { label: string; value: number }[]
+                }
                 value={form.beds}
                 onChange={(v) => setField("beds", v)}
               />
@@ -1047,11 +1060,13 @@ export function AddListingForm({ initialData }: { initialData?: RealtorListingRo
               <FieldLabel required>Full Bathrooms</FieldLabel>
               <div className="flex flex-wrap items-center gap-4">
                 <Pills
-                  options={[
-                    { label: "1", value: 1 },
-                    { label: "2", value: 2 },
-                    { label: "3+", value: 3 },
-                  ] as { label: string; value: number }[]}
+                  options={
+                    [
+                      { label: "1", value: 1 },
+                      { label: "2", value: 2 },
+                      { label: "3+", value: 3 },
+                    ] as { label: string; value: number }[]
+                  }
                   value={form.fullBaths}
                   onChange={(v) => setField("fullBaths", v)}
                 />
@@ -1133,14 +1148,14 @@ export function AddListingForm({ initialData }: { initialData?: RealtorListingRo
                 }}
                 onDragOver={(e) => e.preventDefault()}
                 onClick={() => photoInputRef.current?.click()}
-                className="border-2 border-dashed border-gray-300 rounded-xl p-8 text-center cursor-pointer hover:border-[#c9a96e] hover:bg-[#c9a96e]/5 transition-colors"
+                className="cursor-pointer rounded-xl border-2 border-dashed border-gray-300 p-8 text-center transition-colors hover:border-[#c9a96e] hover:bg-[#c9a96e]/5"
               >
-                <i className="fa-solid fa-images text-3xl text-gray-300 mb-2 block" />
+                <i className="fa-solid fa-images mb-2 block text-3xl text-gray-300" />
                 <p className="text-sm font-medium text-gray-600">
                   Drag photos here or{" "}
-                  <span className="text-[#c9a96e] font-semibold">browse files</span>
+                  <span className="font-semibold text-[#c9a96e]">browse files</span>
                 </p>
-                <p className="text-xs text-gray-400 mt-1">JPEG, PNG, WEBP, HEIC · Max 10MB each</p>
+                <p className="mt-1 text-xs text-gray-400">JPEG, PNG, WEBP, HEIC · Max 10MB each</p>
               </div>
               <input
                 ref={photoInputRef}
@@ -1161,7 +1176,7 @@ export function AddListingForm({ initialData }: { initialData?: RealtorListingRo
                 {existingPhotoUrls.map((url, i) => (
                   <div
                     key={`existing-${i}`}
-                    className="relative group aspect-square rounded-xl overflow-hidden border-2 border-gray-100"
+                    className="group relative aspect-square overflow-hidden rounded-xl border-2 border-gray-100"
                   >
                     <Image
                       src={url}
@@ -1171,16 +1186,14 @@ export function AddListingForm({ initialData }: { initialData?: RealtorListingRo
                       unoptimized
                     />
                     {i === 0 && previewUrls.length === 0 && (
-                      <span className="absolute top-1 left-1 bg-[#c9a96e] text-white text-xs px-2 py-0.5 rounded-full font-semibold pointer-events-none">
+                      <span className="pointer-events-none absolute top-1 left-1 rounded-full bg-[#c9a96e] px-2 py-0.5 text-xs font-semibold text-white">
                         Cover
                       </span>
                     )}
                     <button
                       type="button"
-                      onClick={() =>
-                        setExistingPhotoUrls((prev) => prev.filter((_, j) => j !== i))
-                      }
-                      className="absolute top-1 right-1 bg-black/60 text-white w-6 h-6 rounded-full text-xs flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-black/80"
+                      onClick={() => setExistingPhotoUrls((prev) => prev.filter((_, j) => j !== i))}
+                      className="absolute top-1 right-1 flex h-6 w-6 items-center justify-center rounded-full bg-black/60 text-xs text-white opacity-0 transition-opacity group-hover:opacity-100 hover:bg-black/80"
                     >
                       <i className="fa-solid fa-xmark" />
                     </button>
@@ -1191,11 +1204,15 @@ export function AddListingForm({ initialData }: { initialData?: RealtorListingRo
                   <div
                     key={`new-${i}`}
                     draggable
-                    onDragStart={() => { draggedFile.current = photoFiles[i] ?? null }}
-                    onDragEnd={() => { draggedFile.current = null }}
+                    onDragStart={() => {
+                      draggedFile.current = photoFiles[i] ?? null
+                    }}
+                    onDragEnd={() => {
+                      draggedFile.current = null
+                    }}
                     onDragOver={(e) => e.preventDefault()}
                     onDrop={(e) => handlePhotoDrop(e, i)}
-                    className="relative group aspect-square rounded-xl overflow-hidden border-2 border-gray-100 cursor-grab active:cursor-grabbing"
+                    className="group relative aspect-square cursor-grab overflow-hidden rounded-xl border-2 border-gray-100 active:cursor-grabbing"
                   >
                     <Image
                       src={url}
@@ -1205,18 +1222,18 @@ export function AddListingForm({ initialData }: { initialData?: RealtorListingRo
                       unoptimized
                     />
                     {existingPhotoUrls.length === 0 && i === 0 && (
-                      <span className="absolute top-1 left-1 bg-[#c9a96e] text-white text-xs px-2 py-0.5 rounded-full font-semibold pointer-events-none">
+                      <span className="pointer-events-none absolute top-1 left-1 rounded-full bg-[#c9a96e] px-2 py-0.5 text-xs font-semibold text-white">
                         Cover
                       </span>
                     )}
                     <button
                       type="button"
                       onClick={() => removePhoto(i)}
-                      className="absolute top-1 right-1 bg-black/60 text-white w-6 h-6 rounded-full text-xs flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-black/80"
+                      className="absolute top-1 right-1 flex h-6 w-6 items-center justify-center rounded-full bg-black/60 text-xs text-white opacity-0 transition-opacity group-hover:opacity-100 hover:bg-black/80"
                     >
                       <i className="fa-solid fa-xmark" />
                     </button>
-                    <p className="absolute bottom-0 inset-x-0 text-center text-white text-xs bg-black/40 py-0.5 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+                    <p className="pointer-events-none absolute inset-x-0 bottom-0 bg-black/40 py-0.5 text-center text-xs text-white opacity-0 transition-opacity group-hover:opacity-100">
                       drag to reorder
                     </p>
                   </div>
@@ -1230,7 +1247,7 @@ export function AddListingForm({ initialData }: { initialData?: RealtorListingRo
                 <button
                   type="button"
                   onClick={() => videoInputRef.current?.click()}
-                  className="px-4 py-2.5 rounded-xl border-2 border-gray-200 text-sm font-semibold text-gray-700 hover:border-gray-400 transition-colors"
+                  className="rounded-xl border-2 border-gray-200 px-4 py-2.5 text-sm font-semibold text-gray-700 transition-colors hover:border-gray-400"
                 >
                   <i className="fa-solid fa-video mr-2 text-gray-400" />
                   {videoFile ? videoFile.name : "Choose video"}
@@ -1239,7 +1256,7 @@ export function AddListingForm({ initialData }: { initialData?: RealtorListingRo
                   <button
                     type="button"
                     onClick={() => setVideoFile(null)}
-                    className="text-xs text-gray-400 hover:text-red-500 transition-colors"
+                    className="text-xs text-gray-400 transition-colors hover:text-red-500"
                   >
                     Remove
                   </button>
@@ -1271,7 +1288,7 @@ export function AddListingForm({ initialData }: { initialData?: RealtorListingRo
                 <button
                   type="button"
                   onClick={() => floorPlanInputRef.current?.click()}
-                  className="px-4 py-2.5 rounded-xl border-2 border-gray-200 text-sm font-semibold text-gray-700 hover:border-gray-400 transition-colors"
+                  className="rounded-xl border-2 border-gray-200 px-4 py-2.5 text-sm font-semibold text-gray-700 transition-colors hover:border-gray-400"
                 >
                   <i className="fa-solid fa-ruler-combined mr-2 text-gray-400" />
                   {floorPlanFile ? floorPlanFile.name : "Choose floor plan"}
@@ -1280,7 +1297,7 @@ export function AddListingForm({ initialData }: { initialData?: RealtorListingRo
                   <button
                     type="button"
                     onClick={() => setFloorPlanFile(null)}
-                    className="text-xs text-gray-400 hover:text-red-500 transition-colors"
+                    className="text-xs text-gray-400 transition-colors hover:text-red-500"
                   >
                     Remove
                   </button>
@@ -1312,11 +1329,13 @@ export function AddListingForm({ initialData }: { initialData?: RealtorListingRo
               <FieldLabel>Parking</FieldLabel>
               <div className="flex flex-wrap items-center gap-4">
                 <Pills
-                  options={[
-                    { label: "None", value: "none" },
-                    { label: "Street", value: "street" },
-                    { label: "Garage", value: "garage" },
-                  ] as { label: string; value: FormState["parkingType"] }[]}
+                  options={
+                    [
+                      { label: "None", value: "none" },
+                      { label: "Street", value: "street" },
+                      { label: "Garage", value: "garage" },
+                    ] as { label: string; value: FormState["parkingType"] }[]
+                  }
                   value={form.parkingType}
                   onChange={(v) => setField("parkingType", v)}
                 />
@@ -1329,7 +1348,7 @@ export function AddListingForm({ initialData }: { initialData?: RealtorListingRo
                       max={10}
                       value={form.parkingSpots || ""}
                       onChange={(e) => setField("parkingSpots", Number(e.target.value))}
-                      className="w-20 px-3 py-2 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#c9a96e] text-sm"
+                      className="w-20 rounded-xl border border-gray-200 px-3 py-2 text-sm focus:ring-2 focus:ring-[#c9a96e] focus:outline-none"
                     />
                   </div>
                 )}
@@ -1339,11 +1358,13 @@ export function AddListingForm({ initialData }: { initialData?: RealtorListingRo
             <div>
               <FieldLabel>Laundry</FieldLabel>
               <Pills
-                options={[
-                  { label: "None", value: "none" },
-                  { label: "In-unit", value: "in-unit" },
-                  { label: "In-building", value: "in-building" },
-                ] as { label: string; value: FormState["laundryType"] }[]}
+                options={
+                  [
+                    { label: "None", value: "none" },
+                    { label: "In-unit", value: "in-unit" },
+                    { label: "In-building", value: "in-building" },
+                  ] as { label: string; value: FormState["laundryType"] }[]
+                }
                 value={form.laundryType}
                 onChange={(v) => setField("laundryType", v)}
               />
@@ -1351,46 +1372,108 @@ export function AddListingForm({ initialData }: { initialData?: RealtorListingRo
 
             <div>
               <FieldLabel>Outdoor Space</FieldLabel>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                <CheckboxField label="Balcony" checked={form.hasBalcony} onChange={(v) => setField("hasBalcony", v)} />
-                <CheckboxField label="Terrace" checked={form.hasTerrace} onChange={(v) => setField("hasTerrace", v)} />
-                <CheckboxField label="Backyard" checked={form.hasBackyard} onChange={(v) => setField("hasBackyard", v)} />
-                <CheckboxField label="Roof Deck" checked={form.hasRoofDeck} onChange={(v) => setField("hasRoofDeck", v)} />
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                <CheckboxField
+                  label="Balcony"
+                  checked={form.hasBalcony}
+                  onChange={(v) => setField("hasBalcony", v)}
+                />
+                <CheckboxField
+                  label="Terrace"
+                  checked={form.hasTerrace}
+                  onChange={(v) => setField("hasTerrace", v)}
+                />
+                <CheckboxField
+                  label="Backyard"
+                  checked={form.hasBackyard}
+                  onChange={(v) => setField("hasBackyard", v)}
+                />
+                <CheckboxField
+                  label="Roof Deck"
+                  checked={form.hasRoofDeck}
+                  onChange={(v) => setField("hasRoofDeck", v)}
+                />
               </div>
             </div>
 
             <div>
               <FieldLabel>Pet Policy</FieldLabel>
               <Pills
-                options={[
-                  { label: "No Pets", value: "no-pets" },
-                  { label: "Cats OK", value: "cats-ok" },
-                  { label: "Dogs OK", value: "dogs-ok" },
-                  { label: "Size Limit", value: "size-limit" },
-                ] as { label: string; value: FormState["petPolicy"] }[]}
+                options={
+                  [
+                    { label: "No Pets", value: "no-pets" },
+                    { label: "Cats OK", value: "cats-ok" },
+                    { label: "Dogs OK", value: "dogs-ok" },
+                    { label: "Size Limit", value: "size-limit" },
+                  ] as { label: string; value: FormState["petPolicy"] }[]
+                }
                 value={form.petPolicy}
                 onChange={(v) => setField("petPolicy", v)}
               />
             </div>
 
             <div className="flex gap-6">
-              <CheckboxField label="Furnished" checked={form.isFurnished} onChange={(v) => setField("isFurnished", v)} />
-              <CheckboxField label="Storage included" checked={form.hasStorage} onChange={(v) => setField("hasStorage", v)} />
+              <CheckboxField
+                label="Furnished"
+                checked={form.isFurnished}
+                onChange={(v) => setField("isFurnished", v)}
+              />
+              <CheckboxField
+                label="Storage included"
+                checked={form.hasStorage}
+                onChange={(v) => setField("hasStorage", v)}
+              />
             </div>
           </SectionCard>
 
           {/* ── 7. Building Amenities ────────────────────────────────────── */}
           <SectionCard title="Building Amenities">
-            <div className="grid grid-cols-2 gap-y-3 gap-x-6">
-              <CheckboxField label="Doorman" checked={form.hasDoorman} onChange={(v) => setField("hasDoorman", v)} />
-              <CheckboxField label="Elevator" checked={form.hasElevator} onChange={(v) => setField("hasElevator", v)} />
-              <CheckboxField label="Gym" checked={form.hasGym} onChange={(v) => setField("hasGym", v)} />
-              <CheckboxField label="Swimming pool/sauna" checked={form.hasPool} onChange={(v) => setField("hasPool", v)} />
-              <CheckboxField label="Communal outdoor space" checked={form.hasCommunalOutdoor} onChange={(v) => setField("hasCommunalOutdoor", v)} />
-              <CheckboxField label="Children's room" checked={form.hasChildrensRoom} onChange={(v) => setField("hasChildrensRoom", v)} />
-              <CheckboxField label="Smoke free" checked={form.isSmokeFree} onChange={(v) => setField("isSmokeFree", v)} />
-              <CheckboxField label="ADA accessible" checked={form.isAccessible} onChange={(v) => setField("isAccessible", v)} />
-              <CheckboxField label="Guarantors accepted" checked={form.guarantorsAccepted} onChange={(v) => setField("guarantorsAccepted", v)} />
+            <div className="grid grid-cols-2 gap-x-6 gap-y-3">
+              <CheckboxField
+                label="Doorman"
+                checked={form.hasDoorman}
+                onChange={(v) => setField("hasDoorman", v)}
+              />
+              <CheckboxField
+                label="Elevator"
+                checked={form.hasElevator}
+                onChange={(v) => setField("hasElevator", v)}
+              />
+              <CheckboxField
+                label="Gym"
+                checked={form.hasGym}
+                onChange={(v) => setField("hasGym", v)}
+              />
+              <CheckboxField
+                label="Swimming pool/sauna"
+                checked={form.hasPool}
+                onChange={(v) => setField("hasPool", v)}
+              />
+              <CheckboxField
+                label="Communal outdoor space"
+                checked={form.hasCommunalOutdoor}
+                onChange={(v) => setField("hasCommunalOutdoor", v)}
+              />
+              <CheckboxField
+                label="Children's room"
+                checked={form.hasChildrensRoom}
+                onChange={(v) => setField("hasChildrensRoom", v)}
+              />
+              <CheckboxField
+                label="Smoke free"
+                checked={form.isSmokeFree}
+                onChange={(v) => setField("isSmokeFree", v)}
+              />
+              <CheckboxField
+                label="ADA accessible"
+                checked={form.isAccessible}
+                onChange={(v) => setField("isAccessible", v)}
+              />
+              <CheckboxField
+                label="Guarantors accepted"
+                checked={form.guarantorsAccepted}
+                onChange={(v) => setField("guarantorsAccepted", v)}
+              />
             </div>
           </SectionCard>
 
@@ -1399,11 +1482,13 @@ export function AddListingForm({ initialData }: { initialData?: RealtorListingRo
             <div>
               <FieldLabel>Air Conditioning</FieldLabel>
               <Pills
-                options={[
-                  { label: "None", value: "none" },
-                  { label: "Central AC", value: "central" },
-                  { label: "Window AC", value: "window" },
-                ] as { label: string; value: FormState["acType"] }[]}
+                options={
+                  [
+                    { label: "None", value: "none" },
+                    { label: "Central AC", value: "central" },
+                    { label: "Window AC", value: "window" },
+                  ] as { label: string; value: FormState["acType"] }[]
+                }
                 value={form.acType}
                 onChange={(v) => setField("acType", v)}
               />
@@ -1418,10 +1503,10 @@ export function AddListingForm({ initialData }: { initialData?: RealtorListingRo
                     type="button"
                     onClick={() => setField("heatType", form.heatType === h ? "" : h)}
                     className={[
-                      "px-4 py-2 rounded-full text-sm font-semibold border-2 transition-colors",
+                      "rounded-full border-2 px-4 py-2 text-sm font-semibold transition-colors",
                       form.heatType === h
-                        ? "bg-gray-900 border-gray-900 text-white"
-                        : "bg-white border-gray-200 text-gray-700 hover:border-gray-400",
+                        ? "border-gray-900 bg-gray-900 text-white"
+                        : "border-gray-200 bg-white text-gray-700 hover:border-gray-400",
                     ].join(" ")}
                   >
                     {h.charAt(0).toUpperCase() + h.slice(1)}
@@ -1432,7 +1517,7 @@ export function AddListingForm({ initialData }: { initialData?: RealtorListingRo
 
             <div>
               <FieldLabel>Utilities Included</FieldLabel>
-              <div className="grid grid-cols-3 gap-y-2.5 gap-x-4">
+              <div className="grid grid-cols-3 gap-x-4 gap-y-2.5">
                 {["heat", "hot water", "electric", "gas", "internet", "cable"].map((u) => (
                   <CheckboxField
                     key={u}
@@ -1455,10 +1540,22 @@ export function AddListingForm({ initialData }: { initialData?: RealtorListingRo
 
             <div>
               <FieldLabel>Appliances</FieldLabel>
-              <div className="grid grid-cols-3 gap-y-2.5 gap-x-4">
-                <CheckboxField label="Dishwasher" checked={form.hasDishwasher} onChange={(v) => setField("hasDishwasher", v)} />
-                <CheckboxField label="Microwave" checked={form.hasMicrowave} onChange={(v) => setField("hasMicrowave", v)} />
-                <CheckboxField label="Washer/Dryer" checked={form.hasWasherDryer} onChange={(v) => setField("hasWasherDryer", v)} />
+              <div className="grid grid-cols-3 gap-x-4 gap-y-2.5">
+                <CheckboxField
+                  label="Dishwasher"
+                  checked={form.hasDishwasher}
+                  onChange={(v) => setField("hasDishwasher", v)}
+                />
+                <CheckboxField
+                  label="Microwave"
+                  checked={form.hasMicrowave}
+                  onChange={(v) => setField("hasMicrowave", v)}
+                />
+                <CheckboxField
+                  label="Washer/Dryer"
+                  checked={form.hasWasherDryer}
+                  onChange={(v) => setField("hasWasherDryer", v)}
+                />
               </div>
             </div>
           </SectionCard>
@@ -1474,11 +1571,11 @@ export function AddListingForm({ initialData }: { initialData?: RealtorListingRo
                 value={form.description}
                 onChange={(e) => setField("description", e.target.value)}
                 placeholder="Describe the apartment, building, and neighborhood…"
-                className="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#c9a96e] text-sm resize-none"
+                className="w-full resize-none rounded-xl border border-gray-200 px-4 py-2.5 text-sm focus:ring-2 focus:ring-[#c9a96e] focus:outline-none"
               />
               <p
-                className={`text-xs mt-1 text-right ${
-                  form.description.length >= 950 ? "text-red-500 font-semibold" : "text-gray-400"
+                className={`mt-1 text-right text-xs ${
+                  form.description.length >= 950 ? "font-semibold text-red-500" : "text-gray-400"
                 }`}
               >
                 {form.description.length}/1000
@@ -1507,10 +1604,10 @@ export function AddListingForm({ initialData }: { initialData?: RealtorListingRo
                         type="button"
                         onClick={() => toggleLeaseTerm(t)}
                         className={[
-                          "px-3 py-1.5 rounded-full text-xs font-semibold border-2 transition-colors",
+                          "rounded-full border-2 px-3 py-1.5 text-xs font-semibold transition-colors",
                           form.leaseTerms.includes(t)
-                            ? "bg-gray-900 border-gray-900 text-white"
-                            : "bg-white border-gray-200 text-gray-700 hover:border-gray-400",
+                            ? "border-gray-900 bg-gray-900 text-white"
+                            : "border-gray-200 bg-white text-gray-700 hover:border-gray-400",
                         ].join(" ")}
                       >
                         {t}
@@ -1520,7 +1617,7 @@ export function AddListingForm({ initialData }: { initialData?: RealtorListingRo
                 </div>
 
                 <div>
-                  <div className="flex items-center justify-between mb-3">
+                  <div className="mb-3 flex items-center justify-between">
                     <FieldLabel>Open House Slots</FieldLabel>
                     {form.openHouseSlots.length < 5 && (
                       <button
@@ -1537,9 +1634,9 @@ export function AddListingForm({ initialData }: { initialData?: RealtorListingRo
                   ) : (
                     <div className="space-y-3">
                       {form.openHouseSlots.map((slot, i) => (
-                        <div key={i} className="grid grid-cols-3 gap-2 items-end">
+                        <div key={i} className="grid grid-cols-3 items-end gap-2">
                           <div>
-                            <p className="text-xs text-gray-500 mb-1">Date</p>
+                            <p className="mb-1 text-xs text-gray-500">Date</p>
                             <TextInput
                               type="date"
                               min={today}
@@ -1548,16 +1645,16 @@ export function AddListingForm({ initialData }: { initialData?: RealtorListingRo
                             />
                           </div>
                           <div>
-                            <p className="text-xs text-gray-500 mb-1">Time</p>
+                            <p className="mb-1 text-xs text-gray-500">Time</p>
                             <TextInput
                               type="time"
                               value={slot.time}
                               onChange={(v) => updateOpenHouseSlot(i, "time", v)}
                             />
                           </div>
-                          <div className="flex gap-2 items-end">
+                          <div className="flex items-end gap-2">
                             <div className="flex-1">
-                              <p className="text-xs text-gray-500 mb-1">Notes</p>
+                              <p className="mb-1 text-xs text-gray-500">Notes</p>
                               <TextInput
                                 value={slot.notes}
                                 onChange={(v) => updateOpenHouseSlot(i, "notes", v)}
@@ -1567,7 +1664,7 @@ export function AddListingForm({ initialData }: { initialData?: RealtorListingRo
                             <button
                               type="button"
                               onClick={() => removeOpenHouseSlot(i)}
-                              className="pb-0.5 text-gray-400 hover:text-red-500 transition-colors"
+                              className="pb-0.5 text-gray-400 transition-colors hover:text-red-500"
                             >
                               <i className="fa-solid fa-trash-can text-sm" />
                             </button>
@@ -1582,35 +1679,29 @@ export function AddListingForm({ initialData }: { initialData?: RealtorListingRo
           </SectionCard>
 
           {/* Error & submit */}
-          {error && (
-            <p className="text-sm text-red-600 bg-red-50 rounded-xl px-4 py-3">{error}</p>
-          )}
+          {error && <p className="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-600">{error}</p>}
 
           <div className="flex flex-col gap-3 pb-6">
             <div className="flex gap-3">
               <Link
                 href="/profile"
-                className="flex-1 py-3 rounded-full border-2 border-gray-200 text-sm font-bold text-gray-600 hover:bg-gray-50 transition-colors text-center"
+                className="flex-1 rounded-full border-2 border-gray-200 py-3 text-center text-sm font-bold text-gray-600 transition-colors hover:bg-gray-50"
               >
                 Cancel
               </Link>
               <button
                 type="submit"
                 disabled={loading}
-                className="flex-1 py-3 rounded-full bg-[#c9a96e] text-white text-sm font-bold hover:bg-[#b8935a] transition-colors disabled:opacity-60"
+                className="flex-1 rounded-full bg-[#c9a96e] py-3 text-sm font-bold text-white transition-colors hover:bg-[#b8935a] disabled:opacity-60"
               >
-                {loading
-                  ? "Saving…"
-                  : isEditMode
-                    && !isDraft ? "Save Changes"
-                    : "Post Listing"}
+                {loading ? "Saving…" : isEditMode && !isDraft ? "Save Changes" : "Post Listing"}
               </button>
             </div>
             <button
               type="button"
               disabled={loading}
               onClick={handleSaveDraft}
-              className="w-full py-3 rounded-full border-2 border-gray-300 text-sm font-bold text-gray-500 hover:bg-gray-50 transition-colors disabled:opacity-60"
+              className="w-full rounded-full border-2 border-gray-300 py-3 text-sm font-bold text-gray-500 transition-colors hover:bg-gray-50 disabled:opacity-60"
             >
               {loading ? "Saving…" : "Save as Draft"}
             </button>

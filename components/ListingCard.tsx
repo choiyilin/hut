@@ -5,7 +5,7 @@ import Link from "next/link"
 import type { Listing } from "@/types"
 import { useSaved } from "@/contexts/SavedContext"
 
-interface Props {
+type Props = {
   listing: Listing
 }
 
@@ -17,7 +17,7 @@ export function ListingCard({ listing }: Props) {
 
   return (
     <Link href={`/listings/${listing.id}`} className="group block h-full">
-      <article className="h-full flex flex-col bg-white border border-gray-200 rounded-3xl overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:shadow-lg">
+      <article className="flex h-full flex-col overflow-hidden rounded-3xl border border-gray-200 bg-white transition-all duration-300 hover:-translate-y-1 hover:shadow-lg">
         {/* Image */}
         <div className="relative aspect-[4/3] overflow-hidden bg-gray-100">
           <Image
@@ -29,7 +29,7 @@ export function ListingCard({ listing }: Props) {
           />
 
           {listing.featured && (
-            <span className="absolute top-3 left-3 bg-gold text-gray-900 text-[11px] font-extrabold px-3 py-1.5 rounded-full uppercase tracking-wider">
+            <span className="bg-gold absolute top-3 left-3 rounded-full px-3 py-1.5 text-[11px] font-extrabold tracking-wider text-gray-900 uppercase">
               ★ Featured
             </span>
           )}
@@ -41,7 +41,7 @@ export function ListingCard({ listing }: Props) {
               toggleSaved(listing.id)
             }}
             aria-label={liked ? "Remove from saved" : "Save listing"}
-            className="absolute top-3 right-3 w-9 h-9 flex items-center justify-center rounded-full bg-white shadow-md transition-all hover:scale-110"
+            className="absolute top-3 right-3 flex h-9 w-9 items-center justify-center rounded-full bg-white shadow-md transition-all hover:scale-110"
           >
             <i
               className={`${
@@ -54,13 +54,13 @@ export function ListingCard({ listing }: Props) {
         {/* Body */}
         <div className="flex-1 p-4">
           {/* Neighborhood tag */}
-          <span className="inline-block text-[11px] font-bold text-white bg-gray-900 px-2.5 py-1 rounded-full mb-3">
+          <span className="mb-3 inline-block rounded-full bg-gray-900 px-2.5 py-1 text-[11px] font-bold text-white">
             {listing.neighborhood}
           </span>
 
           {/* Price */}
-          <div className="flex items-baseline gap-1 mb-1">
-            <span className="text-2xl font-bold text-gray-900 tracking-tight">
+          <div className="mb-1 flex items-baseline gap-1">
+            <span className="text-2xl font-bold tracking-tight text-gray-900">
               ${listing.price.toLocaleString()}
             </span>
             {listing.listingType !== "sale" && (
@@ -69,19 +69,17 @@ export function ListingCard({ listing }: Props) {
           </div>
 
           {/* Address */}
-          <p className="text-sm text-gray-600 font-medium truncate mb-3">
-            {listing.title}
-          </p>
+          <p className="mb-3 truncate text-sm font-medium text-gray-600">{listing.title}</p>
 
           {/* Stats as chunky pills */}
           <div className="flex flex-wrap gap-1.5">
-            <span className="bg-gray-100 text-gray-800 text-xs font-bold px-3 py-1.5 rounded-full">
+            <span className="rounded-full bg-gray-100 px-3 py-1.5 text-xs font-bold text-gray-800">
               {bedLabel}
             </span>
-            <span className="bg-gray-100 text-gray-800 text-xs font-bold px-3 py-1.5 rounded-full">
+            <span className="rounded-full bg-gray-100 px-3 py-1.5 text-xs font-bold text-gray-800">
               {listing.baths} ba
             </span>
-            <span className="bg-gray-100 text-gray-800 text-xs font-bold px-3 py-1.5 rounded-full">
+            <span className="rounded-full bg-gray-100 px-3 py-1.5 text-xs font-bold text-gray-800">
               {listing.sqft.toLocaleString()} sqft
             </span>
           </div>

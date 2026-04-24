@@ -12,10 +12,8 @@ export const createClient = async () => {
       cookies: {
         getAll: () => cookieStore.getAll(),
         setAll: (cs) =>
-          cs.forEach(({ name, value, options }) =>
-            cookieStore.set(name, value, options)
-          ),
+          cs.forEach(({ name, value, options }) => cookieStore.set(name, value, options)),
       },
-    }
+    },
   )
 }

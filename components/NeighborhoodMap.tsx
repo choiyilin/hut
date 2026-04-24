@@ -9,10 +9,9 @@ import "mapbox-gl/dist/mapbox-gl.css"
 import { clientEnv } from "@/env/client"
 
 // NYC Neighborhood Tabulation Areas 2020 — NYC Open Data (ntatype=0 → residential only)
-const NTA_GEOJSON_URL =
-  "https://data.cityofnewyork.us/resource/9nt8-h7nd.geojson?ntatype=0"
+const NTA_GEOJSON_URL = "https://data.cityofnewyork.us/resource/9nt8-h7nd.geojson?ntatype=0"
 
-interface Props {
+type Props = {
   selected: string[]
   onToggle: (neighborhood: string) => void
   allCuratedNames: string[]
@@ -63,7 +62,7 @@ export default function NeighborhoodMap({ selected, onToggle, allCuratedNames }:
           const sl = s.toLowerCase()
           const nl = ntaname.toLowerCase()
           return nl.includes(sl) || sl.includes(nl)
-        })
+        }),
       )
   }, [geojson, selected])
 
@@ -83,7 +82,7 @@ export default function NeighborhoodMap({ selected, onToggle, allCuratedNames }:
         "fill-opacity": 1,
       },
     }),
-    [hoveredNTA, selectedNTANames]
+    [hoveredNTA, selectedNTANames],
   )
 
   const lineLayer = useMemo(
@@ -97,15 +96,10 @@ export default function NeighborhoodMap({ selected, onToggle, allCuratedNames }:
           "#2563eb",
           "#d1d5db",
         ],
-        "line-width": [
-          "case",
-          ["in", ["get", "ntaname"], ["literal", selectedNTANames]],
-          2,
-          0.5,
-        ],
+        "line-width": ["case", ["in", ["get", "ntaname"], ["literal", selectedNTANames]], 2, 0.5],
       },
     }),
-    [selectedNTANames]
+    [selectedNTANames],
   )
 
   const handleMouseMove = useCallback((e: MapLayerMouseEvent) => {
@@ -121,13 +115,13 @@ export default function NeighborhoodMap({ selected, onToggle, allCuratedNames }:
       if (typeof value !== "string") return
       onToggle(resolveNTA(value, allCuratedNames))
     },
-    [allCuratedNames, onToggle]
+    [allCuratedNames, onToggle],
   )
 
   const hoveredLabel = hoveredNTA ? resolveNTA(hoveredNTA, allCuratedNames) : null
 
   return (
-    <div className="relative w-full h-full bg-gray-100">
+    <div className="relative h-full w-full bg-gray-100">
       {loading && (
         <div className="absolute inset-0 z-10 flex items-center justify-center bg-gray-50">
           <p className="text-sm text-gray-400">Loading map…</p>
@@ -161,7 +155,7 @@ export default function NeighborhoodMap({ selected, onToggle, allCuratedNames }:
       </Map>
 
       {hoveredLabel && (
-        <div className="absolute bottom-3 left-3 px-3 py-1.5 bg-gray-900/90 text-white text-xs font-semibold rounded-full pointer-events-none backdrop-blur-sm">
+        <div className="pointer-events-none absolute bottom-3 left-3 rounded-full bg-gray-900/90 px-3 py-1.5 text-xs font-semibold text-white backdrop-blur-sm">
           {hoveredLabel}
         </div>
       )}

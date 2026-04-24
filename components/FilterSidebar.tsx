@@ -50,18 +50,16 @@ export const PRICE_PRESETS = [
 // ── Sub-components ────────────────────────────────────────────────────────────
 
 function SectionLabel({ children }: { children: React.ReactNode }) {
-  return (
-    <h3 className="text-sm font-bold text-gray-900 mb-3">{children}</h3>
-  )
+  return <h3 className="mb-3 text-sm font-bold text-gray-900">{children}</h3>
 }
 
 function Divider() {
-  return <hr className="border-gray-100 my-5" />
+  return <hr className="my-5 border-gray-100" />
 }
 
 // ── Main export ───────────────────────────────────────────────────────────────
 
-interface Props {
+type Props = {
   filters: FilterState
   onChange: (partial: Partial<FilterState>) => void
   onClear: () => void
@@ -105,12 +103,12 @@ export function FilterSidebar({ filters, onChange, onClear }: Props) {
   return (
     <div className="p-5">
       {/* Header row */}
-      <div className="flex items-center justify-between mb-5">
+      <div className="mb-5 flex items-center justify-between">
         <span className="text-base font-extrabold text-gray-900">Filters</span>
         {hasActiveFilters && (
           <button
             onClick={onClear}
-            className="text-xs font-bold px-3 py-1 rounded-full bg-gray-100 text-gray-700 hover:bg-gray-200 transition-colors"
+            className="rounded-full bg-gray-100 px-3 py-1 text-xs font-bold text-gray-700 transition-colors hover:bg-gray-200"
           >
             Clear all
           </button>
@@ -128,10 +126,10 @@ export function FilterSidebar({ filters, onChange, onClear }: Props) {
 
       {/* ── Price ───────────────────────────────────────────────── */}
       <SectionLabel>Price</SectionLabel>
-      <div className="flex gap-2 mb-3">
+      <div className="mb-3 flex gap-2">
         {(["minPrice", "maxPrice"] as const).map((key) => (
-          <div key={key} className="flex-1 relative">
-            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs pointer-events-none">
+          <div key={key} className="relative flex-1">
+            <span className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-xs text-gray-400">
               $
             </span>
             <input
@@ -144,7 +142,7 @@ export function FilterSidebar({ filters, onChange, onClear }: Props) {
                   [key]: e.target.value === "" ? "" : Number(e.target.value),
                 })
               }
-              className="w-full pl-6 pr-2 py-2 text-sm font-medium border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-gray-200 focus:border-gray-400 placeholder:text-gray-400 transition-shadow"
+              className="w-full rounded-xl border border-gray-200 py-2 pr-2 pl-6 text-sm font-medium transition-shadow placeholder:text-gray-400 focus:border-gray-400 focus:ring-2 focus:ring-gray-200 focus:outline-none"
             />
           </div>
         ))}
@@ -154,10 +152,10 @@ export function FilterSidebar({ filters, onChange, onClear }: Props) {
           <button
             key={preset.label}
             onClick={() => applyOrClearPreset(preset)}
-            className={`px-3 py-1.5 text-xs font-bold rounded-full border-2 transition-colors ${
+            className={`rounded-full border-2 px-3 py-1.5 text-xs font-bold transition-colors ${
               isPresetActive(preset)
-                ? "bg-gray-900 border-gray-900 text-white"
-                : "bg-white border-gray-200 text-gray-700 hover:border-gray-400"
+                ? "border-gray-900 bg-gray-900 text-white"
+                : "border-gray-200 bg-white text-gray-700 hover:border-gray-400"
             }`}
           >
             {preset.label}
@@ -174,10 +172,10 @@ export function FilterSidebar({ filters, onChange, onClear }: Props) {
           <button
             key={opt.value}
             onClick={() => toggleBed(opt.value)}
-            className={`px-3 py-1.5 text-xs font-bold rounded-full border-2 transition-colors ${
+            className={`rounded-full border-2 px-3 py-1.5 text-xs font-bold transition-colors ${
               filters.beds.includes(opt.value)
-                ? "bg-gray-900 border-gray-900 text-white"
-                : "bg-white border-gray-200 text-gray-700 hover:border-gray-400"
+                ? "border-gray-900 bg-gray-900 text-white"
+                : "border-gray-200 bg-white text-gray-700 hover:border-gray-400"
             }`}
           >
             {opt.label}
@@ -194,10 +192,10 @@ export function FilterSidebar({ filters, onChange, onClear }: Props) {
           <button
             key={opt.value}
             onClick={() => toggleBath(opt.value)}
-            className={`px-3 py-1.5 text-xs font-bold rounded-full border-2 transition-colors ${
+            className={`rounded-full border-2 px-3 py-1.5 text-xs font-bold transition-colors ${
               filters.baths.includes(opt.value)
-                ? "bg-gray-900 border-gray-900 text-white"
-                : "bg-white border-gray-200 text-gray-700 hover:border-gray-400"
+                ? "border-gray-900 bg-gray-900 text-white"
+                : "border-gray-200 bg-white text-gray-700 hover:border-gray-400"
             }`}
           >
             {opt.label}
@@ -210,51 +208,62 @@ export function FilterSidebar({ filters, onChange, onClear }: Props) {
       {/* ── Amenities ───────────────────────────────────────────── */}
       <SectionLabel>Amenities</SectionLabel>
 
-      <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Unit</p>
-      <div className="space-y-2 mb-4">
+      <p className="mb-2 text-xs font-bold tracking-wider text-gray-400 uppercase">Unit</p>
+      <div className="mb-4 space-y-2">
         {["laundry in-unit", "dishwasher", "outdoor space", "central AC", "furnished"].map((a) => (
-          <label key={a} className="flex items-center gap-2.5 cursor-pointer group">
+          <label key={a} className="group flex cursor-pointer items-center gap-2.5">
             <input
               type="checkbox"
               checked={filters.amenities.includes(a)}
               onChange={() => toggleAmenity(a)}
-              className="w-4 h-4 rounded border-gray-300 cursor-pointer accent-gray-900"
+              className="h-4 w-4 cursor-pointer rounded border-gray-300 accent-gray-900"
             />
-            <span className="text-sm font-medium text-gray-700 capitalize group-hover:text-gray-900 transition-colors select-none">
+            <span className="text-sm font-medium text-gray-700 capitalize transition-colors select-none group-hover:text-gray-900">
               {a}
             </span>
           </label>
         ))}
       </div>
 
-      <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Building</p>
-      <div className="space-y-2 mb-4">
-        {["doorman", "elevator", "laundry in-building", "gym", "parking", "communal outdoor space", "swimming pool/sauna", "children's room", "smoke free", "storage"].map((a) => (
-          <label key={a} className="flex items-center gap-2.5 cursor-pointer group">
+      <p className="mb-2 text-xs font-bold tracking-wider text-gray-400 uppercase">Building</p>
+      <div className="mb-4 space-y-2">
+        {[
+          "doorman",
+          "elevator",
+          "laundry in-building",
+          "gym",
+          "parking",
+          "communal outdoor space",
+          "swimming pool/sauna",
+          "children's room",
+          "smoke free",
+          "storage",
+        ].map((a) => (
+          <label key={a} className="group flex cursor-pointer items-center gap-2.5">
             <input
               type="checkbox"
               checked={filters.amenities.includes(a)}
               onChange={() => toggleAmenity(a)}
-              className="w-4 h-4 rounded border-gray-300 cursor-pointer accent-gray-900"
+              className="h-4 w-4 cursor-pointer rounded border-gray-300 accent-gray-900"
             />
-            <span className="text-sm font-medium text-gray-700 capitalize group-hover:text-gray-900 transition-colors select-none">
+            <span className="text-sm font-medium text-gray-700 capitalize transition-colors select-none group-hover:text-gray-900">
               {a}
             </span>
           </label>
         ))}
       </div>
 
-      <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">More</p>
+      <p className="mb-2 text-xs font-bold tracking-wider text-gray-400 uppercase">More</p>
       <div className="space-y-2">
         {["pets allowed", "accessible", "guarantors accepted"].map((a) => (
-          <label key={a} className="flex items-center gap-2.5 cursor-pointer group">
+          <label key={a} className="group flex cursor-pointer items-center gap-2.5">
             <input
               type="checkbox"
               checked={filters.amenities.includes(a)}
               onChange={() => toggleAmenity(a)}
-              className="w-4 h-4 rounded border-gray-300 cursor-pointer accent-gray-900"
+              className="h-4 w-4 cursor-pointer rounded border-gray-300 accent-gray-900"
             />
-            <span className="text-sm font-medium text-gray-700 capitalize group-hover:text-gray-900 transition-colors select-none">
+            <span className="text-sm font-medium text-gray-700 capitalize transition-colors select-none group-hover:text-gray-900">
               {a}
             </span>
           </label>
@@ -266,15 +275,15 @@ export function FilterSidebar({ filters, onChange, onClear }: Props) {
       {/* ── More filters ─────────────────────────────────────────── */}
       <SectionLabel>More</SectionLabel>
 
-      <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Move-in date</p>
+      <p className="mb-2 text-xs font-bold tracking-wider text-gray-400 uppercase">Move-in date</p>
       <input
         type="date"
         value={filters.moveInDate}
         onChange={(e) => onChange({ moveInDate: e.target.value })}
-        className="w-full px-3 py-2 text-sm font-medium border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-gray-200 focus:border-gray-400 mb-4"
+        className="mb-4 w-full rounded-xl border border-gray-200 px-3 py-2 text-sm font-medium focus:border-gray-400 focus:ring-2 focus:ring-gray-200 focus:outline-none"
       />
 
-      <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Building type</p>
+      <p className="mb-2 text-xs font-bold tracking-wider text-gray-400 uppercase">Building type</p>
       <div className="flex flex-wrap gap-1.5">
         {[
           { value: "rental", label: "Rental" },
@@ -290,10 +299,10 @@ export function FilterSidebar({ filters, onChange, onClear }: Props) {
                 : [...filters.buildingType, value]
               onChange({ buildingType: next })
             }}
-            className={`px-3 py-1.5 text-xs font-bold rounded-full border-2 transition-colors ${
+            className={`rounded-full border-2 px-3 py-1.5 text-xs font-bold transition-colors ${
               filters.buildingType.includes(value)
-                ? "bg-gray-900 border-gray-900 text-white"
-                : "bg-white border-gray-200 text-gray-700 hover:border-gray-400"
+                ? "border-gray-900 bg-gray-900 text-white"
+                : "border-gray-200 bg-white text-gray-700 hover:border-gray-400"
             }`}
           >
             {label}

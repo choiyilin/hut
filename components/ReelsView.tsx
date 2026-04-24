@@ -5,14 +5,13 @@ import { useRouter } from "next/navigation"
 import type { Listing } from "@/types"
 import { useSaved } from "@/contexts/SavedContext"
 
-
 function ReelSlide({ listing, index }: { listing: Listing; index: number }) {
   const videoRef = useRef<HTMLVideoElement>(null)
   const slideRef = useRef<HTMLDivElement>(null)
   const router = useRouter()
   const { isSaved, toggleSaved } = useSaved()
   const [preload, setPreload] = useState<"none" | "metadata" | "auto">(
-    index === 0 ? "auto" : "none"
+    index === 0 ? "auto" : "none",
   )
 
   useEffect(() => {
@@ -27,7 +26,7 @@ function ReelSlide({ listing, index }: { listing: Listing; index: number }) {
           setPreload((current) => (current === "auto" ? current : "metadata"))
         }
       },
-      { threshold: 0, rootMargin: "100% 0px" }
+      { threshold: 0, rootMargin: "100% 0px" },
     )
 
     const playObserver = new IntersectionObserver(
@@ -39,7 +38,7 @@ function ReelSlide({ listing, index }: { listing: Listing; index: number }) {
           video.pause()
         }
       },
-      { threshold: 0.6 }
+      { threshold: 0.6 },
     )
 
     preloadObserver.observe(slide)
@@ -132,7 +131,12 @@ function ReelSlide({ listing, index }: { listing: Listing; index: number }) {
           ${listing.price.toLocaleString()}
           {listing.listingType !== "sale" && (
             <span
-              style={{ fontSize: 14, fontWeight: 500, color: "rgba(255,255,255,0.6)", marginLeft: 3 }}
+              style={{
+                fontSize: 14,
+                fontWeight: 500,
+                color: "rgba(255,255,255,0.6)",
+                marginLeft: 3,
+              }}
             >
               /mo
             </span>
@@ -213,7 +217,9 @@ function ReelSlide({ listing, index }: { listing: Listing; index: number }) {
             e.stopPropagation()
             const url = `${window.location.origin}/listings/${listing.id}`
             if (navigator.share) {
-              navigator.share({ title: listing.title, text: listing.address, url }).catch(() => undefined)
+              navigator
+                .share({ title: listing.title, text: listing.address, url })
+                .catch(() => undefined)
             } else {
               navigator.clipboard.writeText(url).catch(() => undefined)
             }
@@ -285,7 +291,7 @@ export function ReelsView({ listings }: { listings: Listing[] }) {
           scrollSnapType: "y mandatory",
           scrollbarWidth: "none",
           WebkitOverflowScrolling: "touch",
-        } as React.CSSProperties}
+        }}
       >
         {listings.map((listing, index) => (
           <ReelSlide key={listing.id} listing={listing} index={index} />

@@ -1,0 +1,13 @@
+.next/
+out/
+build/
+node_modules/
+pnpm-lock.yaml
+next-env.d.ts
+.next/dev/
+*.tsbuildinfo
+
+# Don't reformat docs — preserve user-authored markdown structure.
+*.md
+README*
+CLAUDE.md

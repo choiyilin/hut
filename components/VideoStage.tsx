@@ -2,11 +2,7 @@
 
 import { useEffect, useRef } from "react"
 
-const VIDEOS = [
-  "/videos/bg-1.mp4",
-  "/videos/bg-2.mp4",
-  "/videos/bg-3.mp4",
-] as const
+const VIDEOS = ["/videos/bg-1.mp4", "/videos/bg-2.mp4", "/videos/bg-3.mp4"] as const
 
 function videoAt(i: number): string {
   return VIDEOS[i % VIDEOS.length] ?? VIDEOS[0]
@@ -50,10 +46,14 @@ export function VideoStage() {
 
     // Boot — only fetch the first video; preload standby only after it's playing
     active.play().catch(() => {})
-    active.addEventListener("playing", () => {
-      standby.src = videoAt(idx + 1)
-      standby.load()
-    }, { once: true })
+    active.addEventListener(
+      "playing",
+      () => {
+        standby.src = videoAt(idx + 1)
+        standby.load()
+      },
+      { once: true },
+    )
     attachEndListener()
   }, [])
 
@@ -66,14 +66,14 @@ export function VideoStage() {
         muted
         playsInline
         preload="auto"
-        className="absolute inset-0 w-full h-full object-cover transition-opacity duration-1000"
+        className="absolute inset-0 h-full w-full object-cover transition-opacity duration-1000"
         style={{ opacity: 1, zIndex: 1 }}
       />
       <video
         ref={vidBRef}
         muted
         playsInline
-        className="absolute inset-0 w-full h-full object-cover transition-opacity duration-1000"
+        className="absolute inset-0 h-full w-full object-cover transition-opacity duration-1000"
         style={{ opacity: 0, zIndex: 2 }}
       />
     </div>

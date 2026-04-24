@@ -9,17 +9,17 @@ import dynamic from "next/dynamic"
 
 const ListingMap = dynamic(() => import("./ListingMap"), {
   ssr: false,
-  loading: () => <div className="w-full h-full bg-gray-100 animate-pulse" />,
+  loading: () => <div className="h-full w-full animate-pulse bg-gray-100" />,
 })
 
-interface Props {
+type Props = {
   listing: Listing
 }
 
 function buildGalleryImages(listing: Listing): string[] {
   const base = listing.imageUrl
   // Extract seed from URL like https://picsum.photos/seed/garfield247/800/600
-  const match = base.match(/\/seed\/([^/]+)\//)
+  const match = /\/seed\/([^/]+)\//.exec(base)
   if (!match) return [base, base, base, base]
   const seed = match[1]
   return [
@@ -37,28 +37,24 @@ export function ListingDetail({ listing }: Props) {
   const gallery = buildGalleryImages(listing)
 
   const bedLabel =
-    listing.beds === 0
-      ? "Studio"
-      : listing.beds === 1
-        ? "1 Bed"
-        : `${listing.beds} Beds`
+    listing.beds === 0 ? "Studio" : listing.beds === 1 ? "1 Bed" : `${listing.beds} Beds`
 
   return (
     <div className="min-h-screen bg-gray-50">
       <AppNav />
 
-      <div className="max-w-screen-xl mx-auto px-4 sm:px-6 py-8">
+      <div className="mx-auto max-w-screen-xl px-4 py-8 sm:px-6">
         {/* Back link */}
         <Link
           href="/listings"
-          className="inline-flex items-center gap-2 text-sm font-semibold text-gray-500 hover:text-gray-900 transition-colors mb-6"
+          className="mb-6 inline-flex items-center gap-2 text-sm font-semibold text-gray-500 transition-colors hover:text-gray-900"
         >
           <i className="fa-solid fa-arrow-left text-xs" />
           Back to listings
         </Link>
 
         {/* ── Photo gallery ────────────────────────────────────────────────── */}
-        <div className="grid grid-cols-1 lg:grid-cols-[2fr_1fr] gap-3 mb-8 rounded-2xl overflow-hidden">
+        <div className="mb-8 grid grid-cols-1 gap-3 overflow-hidden rounded-2xl lg:grid-cols-[2fr_1fr]">
           {/* Main image */}
           <div className="relative aspect-[4/3] lg:aspect-auto lg:h-[480px]">
             <Image
@@ -71,7 +67,7 @@ export function ListingDetail({ listing }: Props) {
             {/* Heart on main image */}
             <button
               onClick={() => setHearted((h) => !h)}
-              className="absolute top-4 right-4 w-10 h-10 flex items-center justify-center rounded-full bg-white/80 backdrop-blur-sm text-gray-700 hover:bg-white transition-colors shadow"
+              className="absolute top-4 right-4 flex h-10 w-10 items-center justify-center rounded-full bg-white/80 text-gray-700 shadow backdrop-blur-sm transition-colors hover:bg-white"
               aria-label={hearted ? "Remove from favorites" : "Save listing"}
             >
               <i
@@ -81,13 +77,15 @@ export function ListingDetail({ listing }: Props) {
           </div>
 
           {/* Thumbnails column */}
-          <div className="hidden lg:grid grid-rows-3 gap-3">
+          <div className="hidden grid-rows-3 gap-3 lg:grid">
             {gallery.slice(1).map((src, i) => (
               <button
                 key={i}
                 onClick={() => setActiveImg(i + 1)}
                 className={`relative overflow-hidden rounded-none transition-all ${
-                  activeImg === i + 1 ? "ring-3 ring-gray-900 ring-offset-2" : "opacity-80 hover:opacity-100"
+                  activeImg === i + 1
+                    ? "ring-3 ring-gray-900 ring-offset-2"
+                    : "opacity-80 hover:opacity-100"
                 }`}
               >
                 <Image
@@ -102,12 +100,12 @@ export function ListingDetail({ listing }: Props) {
         </div>
 
         {/* Mobile thumbnail strip */}
-        <div className="flex gap-2 mb-8 lg:hidden overflow-x-auto pb-1">
+        <div className="mb-8 flex gap-2 overflow-x-auto pb-1 lg:hidden">
           {gallery.map((src, i) => (
             <button
               key={i}
               onClick={() => setActiveImg(i)}
-              className={`relative flex-shrink-0 w-20 h-16 rounded-lg overflow-hidden transition-all ${
+              className={`relative h-16 w-20 flex-shrink-0 overflow-hidden rounded-lg transition-all ${
                 activeImg === i ? "ring-2 ring-gray-900" : "opacity-70"
               }`}
             >
@@ -116,26 +114,26 @@ export function ListingDetail({ listing }: Props) {
           ))}
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-[1fr_380px] gap-10">
+        <div className="grid grid-cols-1 gap-10 lg:grid-cols-[1fr_380px]">
           {/* ── Left column ─────────────────────────────────────────────────── */}
           <div>
             {/* Info block */}
             <div className="mb-8">
-              <span className="inline-block px-3 py-1 rounded-full text-xs font-bold text-gray-900 bg-[#c9a96e] mb-3">
+              <span className="mb-3 inline-block rounded-full bg-[#c9a96e] px-3 py-1 text-xs font-bold text-gray-900">
                 {listing.neighborhood}
               </span>
 
-              <h1 className="text-4xl font-extrabold text-gray-900 leading-tight mb-1">
+              <h1 className="mb-1 text-4xl leading-tight font-extrabold text-gray-900">
                 ${listing.price.toLocaleString()}
                 {listing.listingType !== "sale" && (
                   <span className="text-xl font-medium text-gray-400">/mo</span>
                 )}
               </h1>
 
-              <p className="text-gray-500 mb-4">{listing.address}</p>
+              <p className="mb-4 text-gray-500">{listing.address}</p>
 
               {/* Stats pills */}
-              <div className="flex flex-wrap gap-2 mb-5">
+              <div className="mb-5 flex flex-wrap gap-2">
                 {[
                   { icon: "fa-bed", label: bedLabel },
                   {
@@ -149,7 +147,7 @@ export function ListingDetail({ listing }: Props) {
                 ].map(({ icon, label }) => (
                   <span
                     key={label}
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-gray-100 text-sm font-semibold text-gray-700"
+                    className="flex items-center gap-1.5 rounded-full bg-gray-100 px-3 py-1.5 text-sm font-semibold text-gray-700"
                   >
                     <i className={`fa-solid ${icon} text-xs text-gray-400`} />
                     {label}
@@ -157,19 +155,19 @@ export function ListingDetail({ listing }: Props) {
                 ))}
               </div>
 
-              <p className="text-gray-600 leading-relaxed">{listing.description}</p>
+              <p className="leading-relaxed text-gray-600">{listing.description}</p>
             </div>
 
             {/* Amenities */}
             <div className="mb-10">
-              <h2 className="text-xl font-extrabold text-gray-900 mb-4">Amenities</h2>
+              <h2 className="mb-4 text-xl font-extrabold text-gray-900">Amenities</h2>
               <div className="flex flex-wrap gap-2">
                 {listing.amenities.map((a) => (
                   <span
                     key={a}
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-gray-200 bg-white text-sm font-medium text-gray-700 capitalize"
+                    className="flex items-center gap-1.5 rounded-full border border-gray-200 bg-white px-3 py-1.5 text-sm font-medium text-gray-700 capitalize"
                   >
-                    <i className="fa-solid fa-check text-[#c9a96e] text-xs" />
+                    <i className="fa-solid fa-check text-xs text-[#c9a96e]" />
                     {a}
                   </span>
                 ))}
@@ -178,19 +176,17 @@ export function ListingDetail({ listing }: Props) {
 
             {/* Floor plan placeholder */}
             <div className="mb-10">
-              <h2 className="text-xl font-extrabold text-gray-900 mb-4">Floor Plan</h2>
-              <div className="flex flex-col items-center justify-center gap-3 h-52 rounded-2xl border-2 border-dashed border-gray-200 bg-white text-center">
-                <i className="fa-regular fa-map text-gray-200 text-4xl" />
-                <p className="text-sm font-semibold text-gray-400">
-                  Floor plan coming soon
-                </p>
+              <h2 className="mb-4 text-xl font-extrabold text-gray-900">Floor Plan</h2>
+              <div className="flex h-52 flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed border-gray-200 bg-white text-center">
+                <i className="fa-regular fa-map text-4xl text-gray-200" />
+                <p className="text-sm font-semibold text-gray-400">Floor plan coming soon</p>
               </div>
             </div>
 
             {/* Location */}
             <div className="mb-10">
-              <h2 className="text-xl font-extrabold text-gray-900 mb-4">Location</h2>
-              <div className="rounded-2xl overflow-hidden h-72">
+              <h2 className="mb-4 text-xl font-extrabold text-gray-900">Location</h2>
+              <div className="h-72 overflow-hidden rounded-2xl">
                 <ListingMap lat={listing.lat} lng={listing.lng} />
               </div>
             </div>
@@ -198,13 +194,13 @@ export function ListingDetail({ listing }: Props) {
             {/* Video tour */}
             {listing.videoUrl && (
               <div className="mb-10">
-                <h2 className="text-xl font-extrabold text-gray-900 mb-4">Video Tour</h2>
-                <div className="rounded-2xl overflow-hidden">
+                <h2 className="mb-4 text-xl font-extrabold text-gray-900">Video Tour</h2>
+                <div className="overflow-hidden rounded-2xl">
                   <video
                     src={listing.videoUrl}
                     poster={listing.imageUrl}
                     controls
-                    className="w-full aspect-video object-cover"
+                    className="aspect-video w-full object-cover"
                   />
                 </div>
               </div>
@@ -213,25 +209,25 @@ export function ListingDetail({ listing }: Props) {
 
           {/* ── Right column — sticky CTA card ──────────────────────────────── */}
           <div>
-            <div className="sticky top-[calc(4rem+1.5rem)] bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
-              <p className="text-2xl font-extrabold text-gray-900 mb-1">
+            <div className="sticky top-[calc(4rem+1.5rem)] rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
+              <p className="mb-1 text-2xl font-extrabold text-gray-900">
                 ${listing.price.toLocaleString()}
                 {listing.listingType !== "sale" && (
                   <span className="text-base font-medium text-gray-400">/mo</span>
                 )}
               </p>
-              <p className="text-sm text-gray-500 mb-6">
+              <p className="mb-6 text-sm text-gray-500">
                 {bedLabel} · {listing.neighborhood}
               </p>
 
-              <button className="w-full py-3 bg-gray-900 text-white text-sm font-bold rounded-full hover:bg-gray-700 transition-colors mb-3">
+              <button className="mb-3 w-full rounded-full bg-gray-900 py-3 text-sm font-bold text-white transition-colors hover:bg-gray-700">
                 Request a tour
               </button>
-              <button className="w-full py-3 border border-gray-200 text-gray-700 text-sm font-bold rounded-full hover:bg-gray-50 transition-colors">
+              <button className="w-full rounded-full border border-gray-200 py-3 text-sm font-bold text-gray-700 transition-colors hover:bg-gray-50">
                 Contact landlord
               </button>
 
-              <p className="text-xs text-gray-400 text-center mt-4">
+              <p className="mt-4 text-center text-xs text-gray-400">
                 Listed{" "}
                 {new Date(listing.datePosted).toLocaleDateString("en-US", {
                   month: "short",

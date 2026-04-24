@@ -53,7 +53,7 @@ function useDropdown(
   key: string,
   openId: string | null,
   setOpenId: (k: string | null) => void,
-  panelRef: React.RefObject<HTMLDivElement | null>
+  panelRef: React.RefObject<HTMLDivElement | null>,
 ) {
   const isOpen = openId === key
 
@@ -102,16 +102,16 @@ function PillButton({
   return (
     <button
       onClick={onClick}
-      className={`flex items-center gap-1.5 h-10 px-4 rounded-full border-2 text-sm font-bold transition-all whitespace-nowrap ${
+      className={`flex h-10 items-center gap-1.5 rounded-full border-2 px-4 text-sm font-bold whitespace-nowrap transition-all ${
         dark
-          ? "bg-gray-900 border-gray-900 text-white"
-          : "bg-white border-gray-200 text-gray-700 hover:border-gray-400"
+          ? "border-gray-900 bg-gray-900 text-white"
+          : "border-gray-200 bg-white text-gray-700 hover:border-gray-400"
       }`}
     >
       {label}
       {badgeCount > 0 && (
         <span
-          className={`flex items-center justify-center w-4 h-4 rounded-full text-[10px] font-extrabold ${
+          className={`flex h-4 w-4 items-center justify-center rounded-full text-[10px] font-extrabold ${
             dark ? "bg-white text-gray-900" : "bg-gray-900 text-white"
           }`}
         >
@@ -129,16 +129,10 @@ function PillButton({
 
 // ── DropdownPanel ─────────────────────────────────────────────────────────────
 
-function DropdownPanel({
-  children,
-  className,
-}: {
-  children: React.ReactNode
-  className?: string
-}) {
+function DropdownPanel({ children, className }: { children: React.ReactNode; className?: string }) {
   return (
     <div
-      className={`absolute top-full left-0 mt-2 z-50 bg-white rounded-2xl shadow-xl border border-gray-100 p-4 ${className ?? "min-w-[220px]"}`}
+      className={`absolute top-full left-0 z-50 mt-2 rounded-2xl border border-gray-100 bg-white p-4 shadow-xl ${className ?? "min-w-[220px]"}`}
     >
       {children}
     </div>
@@ -184,11 +178,13 @@ function PriceDropdown({
       />
       {isOpen && (
         <DropdownPanel className="min-w-[300px]">
-          <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">Price range</p>
-          <div className="flex gap-2 mb-3">
+          <p className="mb-3 text-xs font-bold tracking-wider text-gray-500 uppercase">
+            Price range
+          </p>
+          <div className="mb-3 flex gap-2">
             {(["minPrice", "maxPrice"] as const).map((key) => (
-              <div key={key} className="flex-1 relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs pointer-events-none">
+              <div key={key} className="relative flex-1">
+                <span className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-xs text-gray-400">
                   $
                 </span>
                 <input
@@ -199,7 +195,7 @@ function PriceDropdown({
                   onChange={(e) =>
                     onChange({ [key]: e.target.value === "" ? "" : Number(e.target.value) })
                   }
-                  className="w-full pl-6 pr-2 py-2 text-sm font-medium border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-gray-200 focus:border-gray-400 placeholder:text-gray-400"
+                  className="w-full rounded-xl border border-gray-200 py-2 pr-2 pl-6 text-sm font-medium placeholder:text-gray-400 focus:border-gray-400 focus:ring-2 focus:ring-gray-200 focus:outline-none"
                 />
               </div>
             ))}
@@ -209,10 +205,10 @@ function PriceDropdown({
               <button
                 key={preset.label}
                 onClick={() => applyOrClear(preset)}
-                className={`px-3 py-1.5 text-xs font-bold rounded-full border-2 transition-colors ${
+                className={`rounded-full border-2 px-3 py-1.5 text-xs font-bold transition-colors ${
                   isPresetActive(preset)
-                    ? "bg-gray-900 border-gray-900 text-white"
-                    : "bg-white border-gray-200 text-gray-700 hover:border-gray-400"
+                    ? "border-gray-900 bg-gray-900 text-white"
+                    : "border-gray-200 bg-white text-gray-700 hover:border-gray-400"
                 }`}
               >
                 {preset.label}
@@ -268,32 +264,32 @@ function BedsDropdown({
       />
       {isOpen && (
         <DropdownPanel>
-          <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Bedrooms</p>
-          <div className="flex flex-wrap gap-1.5 mb-4">
+          <p className="mb-2 text-xs font-bold tracking-wider text-gray-500 uppercase">Bedrooms</p>
+          <div className="mb-4 flex flex-wrap gap-1.5">
             {BED_OPTIONS.map((opt) => (
               <button
                 key={opt.value}
                 onClick={() => toggleBed(opt.value)}
-                className={`px-3 py-1.5 text-xs font-bold rounded-full border-2 transition-colors ${
+                className={`rounded-full border-2 px-3 py-1.5 text-xs font-bold transition-colors ${
                   filters.beds.includes(opt.value)
-                    ? "bg-gray-900 border-gray-900 text-white"
-                    : "bg-white border-gray-200 text-gray-700 hover:border-gray-400"
+                    ? "border-gray-900 bg-gray-900 text-white"
+                    : "border-gray-200 bg-white text-gray-700 hover:border-gray-400"
                 }`}
               >
                 {opt.label}
               </button>
             ))}
           </div>
-          <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Bathrooms</p>
+          <p className="mb-2 text-xs font-bold tracking-wider text-gray-500 uppercase">Bathrooms</p>
           <div className="flex flex-wrap gap-1.5">
             {BATH_OPTIONS.map((opt) => (
               <button
                 key={opt.value}
                 onClick={() => toggleBath(opt.value)}
-                className={`px-3 py-1.5 text-xs font-bold rounded-full border-2 transition-colors ${
+                className={`rounded-full border-2 px-3 py-1.5 text-xs font-bold transition-colors ${
                   filters.baths.includes(opt.value)
-                    ? "bg-gray-900 border-gray-900 text-white"
-                    : "bg-white border-gray-200 text-gray-700 hover:border-gray-400"
+                    ? "border-gray-900 bg-gray-900 text-white"
+                    : "border-gray-200 bg-white text-gray-700 hover:border-gray-400"
                 }`}
               >
                 {opt.label}
@@ -387,23 +383,23 @@ function AmenitiesDropdown({
       />
       {isOpen && (
         <DropdownPanel className="w-[320px]">
-          <p className="text-xs text-gray-500 mb-4 leading-relaxed">
+          <p className="mb-4 text-xs leading-relaxed text-gray-500">
             Being flexible on amenities will display more huts.
           </p>
 
           {/* Unit section */}
-          <p className="text-sm font-extrabold text-gray-900 mb-2">Unit</p>
-          <div className="space-y-1.5 mb-2">
+          <p className="mb-2 text-sm font-extrabold text-gray-900">Unit</p>
+          <div className="mb-2 space-y-1.5">
             {UNIT_FEATURED.map(({ value, label, icon }) => {
               const selected = filters.amenities.includes(value)
               return (
                 <button
                   key={value}
                   onClick={() => toggleAmenity(value)}
-                  className={`flex items-center gap-3 w-full px-3 py-2.5 border-2 rounded-xl text-sm font-semibold transition-all text-left ${
+                  className={`flex w-full items-center gap-3 rounded-xl border-2 px-3 py-2.5 text-left text-sm font-semibold transition-all ${
                     selected
-                      ? "bg-gray-900 border-gray-900 text-white"
-                      : "bg-white border-gray-200 text-gray-700 hover:border-gray-400"
+                      ? "border-gray-900 bg-gray-900 text-white"
+                      : "border-gray-200 bg-white text-gray-700 hover:border-gray-400"
                   }`}
                 >
                   <i
@@ -418,22 +414,24 @@ function AmenitiesDropdown({
           </div>
           <button
             onClick={() => setShowMoreUnit((v) => !v)}
-            className="flex items-center gap-1 text-xs font-bold text-gray-500 hover:text-gray-900 uppercase tracking-wider mb-3 transition-colors"
+            className="mb-3 flex items-center gap-1 text-xs font-bold tracking-wider text-gray-500 uppercase transition-colors hover:text-gray-900"
           >
             Show more
-            <i className={`fa-solid fa-chevron-down text-[9px] transition-transform ${showMoreUnit ? "rotate-180" : ""}`} />
+            <i
+              className={`fa-solid fa-chevron-down text-[9px] transition-transform ${showMoreUnit ? "rotate-180" : ""}`}
+            />
           </button>
           {showMoreUnit && (
-            <div className="space-y-2 mb-4">
+            <div className="mb-4 space-y-2">
               {UNIT_EXTRA.map((a) => (
-                <label key={a} className="flex items-center gap-2.5 cursor-pointer group">
+                <label key={a} className="group flex cursor-pointer items-center gap-2.5">
                   <input
                     type="checkbox"
                     checked={filters.amenities.includes(a)}
                     onChange={() => toggleAmenity(a)}
-                    className="w-4 h-4 rounded border-gray-300 cursor-pointer accent-gray-900"
+                    className="h-4 w-4 cursor-pointer rounded border-gray-300 accent-gray-900"
                   />
-                  <span className="text-sm font-medium text-gray-700 capitalize group-hover:text-gray-900 transition-colors select-none">
+                  <span className="text-sm font-medium text-gray-700 capitalize transition-colors select-none group-hover:text-gray-900">
                     {a}
                   </span>
                 </label>
@@ -441,21 +439,21 @@ function AmenitiesDropdown({
             </div>
           )}
 
-          <div className="border-t border-gray-100 my-1" />
+          <div className="my-1 border-t border-gray-100" />
 
           {/* Building section */}
-          <p className="text-sm font-extrabold text-gray-900 mt-3 mb-2">Building</p>
-          <div className="space-y-1.5 mb-2">
+          <p className="mt-3 mb-2 text-sm font-extrabold text-gray-900">Building</p>
+          <div className="mb-2 space-y-1.5">
             {BUILDING_FEATURED.map(({ value, label, icon }) => {
               const selected = filters.amenities.includes(value)
               return (
                 <button
                   key={value}
                   onClick={() => toggleAmenity(value)}
-                  className={`flex items-center gap-3 w-full px-3 py-2.5 border-2 rounded-xl text-sm font-semibold transition-all text-left ${
+                  className={`flex w-full items-center gap-3 rounded-xl border-2 px-3 py-2.5 text-left text-sm font-semibold transition-all ${
                     selected
-                      ? "bg-gray-900 border-gray-900 text-white"
-                      : "bg-white border-gray-200 text-gray-700 hover:border-gray-400"
+                      ? "border-gray-900 bg-gray-900 text-white"
+                      : "border-gray-200 bg-white text-gray-700 hover:border-gray-400"
                   }`}
                 >
                   <i
@@ -470,22 +468,24 @@ function AmenitiesDropdown({
           </div>
           <button
             onClick={() => setShowMoreBuilding((v) => !v)}
-            className="flex items-center gap-1 text-xs font-bold text-gray-500 hover:text-gray-900 uppercase tracking-wider mb-3 transition-colors"
+            className="mb-3 flex items-center gap-1 text-xs font-bold tracking-wider text-gray-500 uppercase transition-colors hover:text-gray-900"
           >
             Show more
-            <i className={`fa-solid fa-chevron-down text-[9px] transition-transform ${showMoreBuilding ? "rotate-180" : ""}`} />
+            <i
+              className={`fa-solid fa-chevron-down text-[9px] transition-transform ${showMoreBuilding ? "rotate-180" : ""}`}
+            />
           </button>
           {showMoreBuilding && (
-            <div className="space-y-2 mb-3">
+            <div className="mb-3 space-y-2">
               {BUILDING_EXTRA.map((a) => (
-                <label key={a} className="flex items-center gap-2.5 cursor-pointer group">
+                <label key={a} className="group flex cursor-pointer items-center gap-2.5">
                   <input
                     type="checkbox"
                     checked={filters.amenities.includes(a)}
                     onChange={() => toggleAmenity(a)}
-                    className="w-4 h-4 rounded border-gray-300 cursor-pointer accent-gray-900"
+                    className="h-4 w-4 cursor-pointer rounded border-gray-300 accent-gray-900"
                   />
-                  <span className="text-sm font-medium text-gray-700 capitalize group-hover:text-gray-900 transition-colors select-none">
+                  <span className="text-sm font-medium text-gray-700 capitalize transition-colors select-none group-hover:text-gray-900">
                     {a}
                   </span>
                 </label>
@@ -494,16 +494,16 @@ function AmenitiesDropdown({
           )}
 
           {/* Footer */}
-          <div className="border-t border-gray-100 mt-2 pt-3 flex items-center justify-between">
+          <div className="mt-2 flex items-center justify-between border-t border-gray-100 pt-3">
             <button
               onClick={resetAmenitiesSection}
-              className="text-sm font-bold text-gray-500 hover:text-gray-900 transition-colors underline underline-offset-2"
+              className="text-sm font-bold text-gray-500 underline underline-offset-2 transition-colors hover:text-gray-900"
             >
               Reset
             </button>
             <button
               onClick={() => setOpenId(null)}
-              className="px-5 py-2 bg-gray-900 text-white text-sm font-bold rounded-full hover:bg-gray-700 transition-colors"
+              className="rounded-full bg-gray-900 px-5 py-2 text-sm font-bold text-white transition-colors hover:bg-gray-700"
             >
               Done
             </button>
@@ -531,8 +531,7 @@ function MoreDropdown({
   const { isOpen, toggle } = useDropdown("more", openId, setOpenId, ref)
 
   const moreAmenityCount = filters.amenities.filter((a) => MORE_AMENITIES.includes(a)).length
-  const badgeCount =
-    (filters.moveInDate ? 1 : 0) + filters.buildingType.length + moreAmenityCount
+  const badgeCount = (filters.moveInDate ? 1 : 0) + filters.buildingType.length + moreAmenityCount
   const isActive = badgeCount > 0
 
   const toggleAmenity = (a: string) => {
@@ -569,25 +568,29 @@ function MoreDropdown({
       {isOpen && (
         <DropdownPanel className="w-[300px]">
           {/* Move-in date */}
-          <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Move-in date</p>
+          <p className="mb-2 text-xs font-bold tracking-wider text-gray-500 uppercase">
+            Move-in date
+          </p>
           <input
             type="date"
             value={filters.moveInDate}
             onChange={(e) => onChange({ moveInDate: e.target.value })}
-            className="w-full px-3 py-2 text-sm font-medium border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-gray-200 focus:border-gray-400 mb-4"
+            className="mb-4 w-full rounded-xl border border-gray-200 px-3 py-2 text-sm font-medium focus:border-gray-400 focus:ring-2 focus:ring-gray-200 focus:outline-none"
           />
 
           {/* Building type */}
-          <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Building type</p>
-          <div className="flex flex-wrap gap-1.5 mb-4">
+          <p className="mb-2 text-xs font-bold tracking-wider text-gray-500 uppercase">
+            Building type
+          </p>
+          <div className="mb-4 flex flex-wrap gap-1.5">
             {BUILDING_TYPES.map(({ value, label }) => (
               <button
                 key={value}
                 onClick={() => toggleBuildingType(value)}
-                className={`px-3 py-1.5 text-xs font-bold rounded-full border-2 transition-colors ${
+                className={`rounded-full border-2 px-3 py-1.5 text-xs font-bold transition-colors ${
                   filters.buildingType.includes(value)
-                    ? "bg-gray-900 border-gray-900 text-white"
-                    : "bg-white border-gray-200 text-gray-700 hover:border-gray-400"
+                    ? "border-gray-900 bg-gray-900 text-white"
+                    : "border-gray-200 bg-white text-gray-700 hover:border-gray-400"
                 }`}
               >
                 {label}
@@ -596,17 +599,17 @@ function MoreDropdown({
           </div>
 
           {/* Additional amenities */}
-          <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Amenities</p>
-          <div className="space-y-2 mb-4">
+          <p className="mb-2 text-xs font-bold tracking-wider text-gray-500 uppercase">Amenities</p>
+          <div className="mb-4 space-y-2">
             {MORE_AMENITIES.map((a) => (
-              <label key={a} className="flex items-center gap-2.5 cursor-pointer group">
+              <label key={a} className="group flex cursor-pointer items-center gap-2.5">
                 <input
                   type="checkbox"
                   checked={filters.amenities.includes(a)}
                   onChange={() => toggleAmenity(a)}
-                  className="w-4 h-4 rounded border-gray-300 cursor-pointer accent-gray-900"
+                  className="h-4 w-4 cursor-pointer rounded border-gray-300 accent-gray-900"
                 />
-                <span className="text-sm font-medium text-gray-700 capitalize group-hover:text-gray-900 transition-colors select-none">
+                <span className="text-sm font-medium text-gray-700 capitalize transition-colors select-none group-hover:text-gray-900">
                   {a}
                 </span>
               </label>
@@ -614,16 +617,16 @@ function MoreDropdown({
           </div>
 
           {/* Footer */}
-          <div className="border-t border-gray-100 pt-3 flex items-center justify-between">
+          <div className="flex items-center justify-between border-t border-gray-100 pt-3">
             <button
               onClick={resetMore}
-              className="text-sm font-bold text-gray-500 hover:text-gray-900 transition-colors underline underline-offset-2"
+              className="text-sm font-bold text-gray-500 underline underline-offset-2 transition-colors hover:text-gray-900"
             >
               Reset
             </button>
             <button
               onClick={() => setOpenId(null)}
-              className="px-5 py-2 bg-gray-900 text-white text-sm font-bold rounded-full hover:bg-gray-700 transition-colors"
+              className="rounded-full bg-gray-900 px-5 py-2 text-sm font-bold text-white transition-colors hover:bg-gray-700"
             >
               Done
             </button>
@@ -636,7 +639,7 @@ function MoreDropdown({
 
 // ── Main export ───────────────────────────────────────────────────────────────
 
-interface Props {
+type Props = {
   filters: FilterState
   onChange: (partial: Partial<FilterState>) => void
   onClear: () => void
@@ -656,16 +659,26 @@ export function FilterBar({ filters, onChange, onClear }: Props) {
     filters.buildingType.length > 0
 
   return (
-    <div className="flex items-center gap-2 flex-wrap">
+    <div className="flex flex-wrap items-center gap-2">
       <PriceDropdown filters={filters} onChange={onChange} openId={openId} setOpenId={setOpenId} />
       <BedsDropdown filters={filters} onChange={onChange} openId={openId} setOpenId={setOpenId} />
-      <NeighborhoodsDropdown filters={filters} onChange={onChange} openId={openId} setOpenId={setOpenId} />
-      <AmenitiesDropdown filters={filters} onChange={onChange} openId={openId} setOpenId={setOpenId} />
+      <NeighborhoodsDropdown
+        filters={filters}
+        onChange={onChange}
+        openId={openId}
+        setOpenId={setOpenId}
+      />
+      <AmenitiesDropdown
+        filters={filters}
+        onChange={onChange}
+        openId={openId}
+        setOpenId={setOpenId}
+      />
       <MoreDropdown filters={filters} onChange={onChange} openId={openId} setOpenId={setOpenId} />
       {hasActive && (
         <button
           onClick={onClear}
-          className="h-10 px-4 text-sm font-bold text-gray-500 hover:text-gray-900 transition-colors"
+          className="h-10 px-4 text-sm font-bold text-gray-500 transition-colors hover:text-gray-900"
         >
           Clear all
         </button>
