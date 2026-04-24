@@ -1,15 +1,16 @@
+import { mapboxToken } from "@/env/server"
+
 export async function POST(req: Request) {
   const { address } = await req.json()
-  const token = process.env.MAPBOX_SECRET_TOKEN ?? process.env.NEXT_PUBLIC_MAPBOX_TOKEN
 
-  if (!token || !address?.trim()) {
+  if (!mapboxToken || !address?.trim()) {
     return Response.json({ error: "bad request" }, { status: 400 })
   }
 
   const url = new URL(
     `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(address)}.json`
   )
-  url.searchParams.set("access_token", token)
+  url.searchParams.set("access_token", mapboxToken)
   url.searchParams.set("country", "US")
   url.searchParams.set("proximity", "-73.998,40.732")
   url.searchParams.set("types", "address")

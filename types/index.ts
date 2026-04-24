@@ -12,42 +12,44 @@ export interface Listing {
   lat: number
   lng: number
   imageUrl: string
-  videoUrl?: string
+  videoUrl?: string | undefined
   amenities: string[]
   description: string
   datePosted: string
   featured: boolean
   // Extended fields (optional — existing mock listings stay type-safe)
-  listingType?: "rent" | "sale"
-  propertyType?: "apartment" | "house" | "condo" | "townhouse" | "co-op" | "multi-family"
-  status?: "active" | "pending" | "off-market" | "draft"
-  unitNumber?: string
-  city?: string
-  state?: string
-  zip?: string
-  photoUrls?: string[]
-  floorPlanUrl?: string
-  halfBaths?: number
-  lotSize?: number
-  floorNumber?: number
-  totalFloors?: number
-  yearBuilt?: number
-  parkingType?: "none" | "street" | "garage"
-  parkingSpots?: number
-  laundryType?: "in-unit" | "in-building" | "none"
-  petPolicy?: "no-pets" | "cats-ok" | "dogs-ok" | "size-limit"
-  isFurnished?: boolean
-  acType?: "central" | "window" | "none"
-  heatType?: "electric" | "gas" | "steam" | "radiant"
-  utilitiesIncluded?: string[]
-  availableDate?: string
-  leaseTerms?: string[]
-  openHouseSlots?: OpenHouseSlot[]
-  securityDeposit?: number
-  brokerFeeAmount?: number
-  brokerFeePct?: number
-  hoaFees?: number
-  propertyTaxesYear?: number
+  // Phase 1 will replace this with Zod-derived types; transitional `| undefined`
+  // here accommodates realtorRowToListing which emits explicit undefined.
+  listingType?: "rent" | "sale" | undefined
+  propertyType?: "apartment" | "house" | "condo" | "townhouse" | "co-op" | "multi-family" | undefined
+  status?: "active" | "pending" | "off-market" | "draft" | undefined
+  unitNumber?: string | undefined
+  city?: string | undefined
+  state?: string | undefined
+  zip?: string | undefined
+  photoUrls?: string[] | undefined
+  floorPlanUrl?: string | undefined
+  halfBaths?: number | undefined
+  lotSize?: number | undefined
+  floorNumber?: number | undefined
+  totalFloors?: number | undefined
+  yearBuilt?: number | undefined
+  parkingType?: "none" | "street" | "garage" | undefined
+  parkingSpots?: number | undefined
+  laundryType?: "in-unit" | "in-building" | "none" | undefined
+  petPolicy?: "no-pets" | "cats-ok" | "dogs-ok" | "size-limit" | undefined
+  isFurnished?: boolean | undefined
+  acType?: "central" | "window" | "none" | undefined
+  heatType?: "electric" | "gas" | "steam" | "radiant" | undefined
+  utilitiesIncluded?: string[] | undefined
+  availableDate?: string | undefined
+  leaseTerms?: string[] | undefined
+  openHouseSlots?: OpenHouseSlot[] | undefined
+  securityDeposit?: number | undefined
+  brokerFeeAmount?: number | undefined
+  brokerFeePct?: number | undefined
+  hoaFees?: number | undefined
+  propertyTaxesYear?: number | undefined
 }
 
 export type RealtorListingRow = {
@@ -133,7 +135,7 @@ export function realtorRowToListing(row: RealtorListingRow): Listing {
     neighborhood: row.neighborhood,
     lat: row.lat,
     lng: row.lng,
-    imageUrl: row.photo_urls.length > 0 ? row.photo_urls[0] : row.image_url,
+    imageUrl: row.photo_urls[0] ?? row.image_url,
     videoUrl: row.video_url ?? undefined,
     amenities: row.amenities,
     description: row.description,

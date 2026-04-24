@@ -31,7 +31,7 @@ export function LoginForm() {
       return
     }
 
-    const userRole = data.user?.user_metadata?.role
+    const userRole = data.user?.user_metadata?.["role"]
 
     // If the user picked "I'm a realtor" in the UI but this account isn't a
     // realtor account, tell them — don't silently redirect to the renter flow.

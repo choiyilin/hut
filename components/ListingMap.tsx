@@ -3,6 +3,8 @@
 import Map, { Marker } from "react-map-gl/mapbox"
 import "mapbox-gl/dist/mapbox-gl.css"
 
+import { clientEnv } from "@/env/client"
+
 interface Props {
   lat: number
   lng: number
@@ -13,7 +15,7 @@ export function ListingMap({ lat, lng }: Props) {
     <Map
       initialViewState={{ longitude: lng, latitude: lat, zoom: 14 }}
       mapStyle="mapbox://styles/mapbox/light-v11"
-      mapboxAccessToken={process.env.NEXT_PUBLIC_MAPBOX_TOKEN}
+      mapboxAccessToken={clientEnv.NEXT_PUBLIC_MAPBOX_TOKEN}
       style={{ width: "100%", height: "100%" }}
     >
       <Marker longitude={lng} latitude={lat} anchor="bottom">

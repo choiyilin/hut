@@ -22,6 +22,7 @@ function ReelSlide({ listing, index }: { listing: Listing; index: number }) {
 
     const preloadObserver = new IntersectionObserver(
       ([entry]) => {
+        if (!entry) return
         if (entry.isIntersecting) {
           setPreload((current) => (current === "auto" ? current : "metadata"))
         }
@@ -31,6 +32,7 @@ function ReelSlide({ listing, index }: { listing: Listing; index: number }) {
 
     const playObserver = new IntersectionObserver(
       ([entry]) => {
+        if (!entry) return
         if (entry.isIntersecting) {
           video.play().catch(() => undefined)
         } else {

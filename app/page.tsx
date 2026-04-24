@@ -8,16 +8,16 @@ export default function HomePage() {
       <VideoStage />
 
       {/* Dark overlay */}
-      <div className={styles.overlay} role="presentation" />
+      <div className={styles["overlay"]} role="presentation" />
 
       {/* Navigation */}
-      <header className={styles.header}>
-        <Link href="/" className={styles.logo}>
+      <header className={styles["header"]}>
+        <Link href="/" className={styles["logo"]}>
           HUT
         </Link>
 
         <nav aria-label="Main navigation">
-          <ul className={styles.navList}>
+          <ul className={styles["navList"]}>
             <li>
               <Link href="/listings?type=rent">
                 Rent <i className="fa-solid fa-plus" />
@@ -44,18 +44,18 @@ export default function HomePage() {
           </ul>
         </nav>
 
-        <Link href="/login" className={styles.btnAuth}>
+        <Link href="/login" className={styles["btnAuth"]}>
           <i className="fa-regular fa-user" />
           Login&thinsp;/&thinsp;Sign up
         </Link>
       </header>
 
       {/* Hero */}
-      <main className={styles.hero}>
-<h1 className={styles.heroH1}>Find your perfect Hut</h1>
+      <main className={styles["hero"]}>
+        <h1 className={styles["heroH1"]}>Find your perfect Hut</h1>
 
-        <div className={styles.searchWrap}>
-          <form method="GET" action="/listings" className={styles.searchPill}>
+        <div className={styles["searchWrap"]}>
+          <form method="GET" action="/listings" className={styles["searchPill"]}>
             <input type="hidden" name="type" value="rent" />
             <input
               type="text"
@@ -64,11 +64,11 @@ export default function HomePage() {
               aria-label="Search properties"
               autoComplete="off"
               spellCheck={false}
-              className={styles.searchInput}
+              className={styles["searchInput"]}
             />
             <button
               type="submit"
-              className={styles.searchBtn}
+              className={styles["searchBtn"]}
               aria-label="Search"
             >
               <i className="fa-solid fa-magnifying-glass" />

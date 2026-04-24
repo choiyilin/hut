@@ -6,6 +6,8 @@ import type { MapMouseEvent as MapLayerMouseEvent } from "react-map-gl/mapbox"
 import type { FeatureCollection } from "geojson"
 import "mapbox-gl/dist/mapbox-gl.css"
 
+import { clientEnv } from "@/env/client"
+
 // NYC Neighborhood Tabulation Areas 2020 — NYC Open Data (ntatype=0 → residential only)
 const NTA_GEOJSON_URL =
   "https://data.cityofnewyork.us/resource/9nt8-h7nd.geojson?ntatype=0"
@@ -51,7 +53,10 @@ export default function NeighborhoodMap({ selected, onToggle, allCuratedNames }:
   const selectedNTANames = useMemo<string[]>(() => {
     if (!geojson) return []
     return geojson.features
-      .map((f) => f.properties?.ntaname as string | undefined)
+      .map((f) => {
+        const value = f.properties?.["ntaname"]
+        return typeof value === "string" ? value : undefined
+      })
       .filter((n): n is string => !!n)
       .filter((ntaname) =>
         selected.some((s) => {
@@ -104,16 +109,17 @@ export default function NeighborhoodMap({ selected, onToggle, allCuratedNames }:
   )
 
   const handleMouseMove = useCallback((e: MapLayerMouseEvent) => {
-    setHoveredNTA(e.features?.[0]?.properties?.ntaname ?? null)
+    const value = e.features?.[0]?.properties?.["ntaname"]
+    setHoveredNTA(typeof value === "string" ? value : null)
   }, [])
 
   const handleMouseLeave = useCallback(() => setHoveredNTA(null), [])
 
   const handleClick = useCallback(
     (e: MapLayerMouseEvent) => {
-      const ntaname = e.features?.[0]?.properties?.ntaname as string | undefined
-      if (!ntaname) return
-      onToggle(resolveNTA(ntaname, allCuratedNames))
+      const value = e.features?.[0]?.properties?.["ntaname"]
+      if (typeof value !== "string") return
+      onToggle(resolveNTA(value, allCuratedNames))
     },
     [allCuratedNames, onToggle]
   )
@@ -135,7 +141,7 @@ export default function NeighborhoodMap({ selected, onToggle, allCuratedNames }:
       <Map
         initialViewState={{ latitude: 40.732, longitude: -73.998, zoom: 11.4 }}
         mapStyle="mapbox://styles/mapbox/light-v11"
-        mapboxAccessToken={process.env.NEXT_PUBLIC_MAPBOX_TOKEN}
+        mapboxAccessToken={clientEnv.NEXT_PUBLIC_MAPBOX_TOKEN}
         style={{ width: "100%", height: "100%" }}
         interactiveLayerIds={["nta-fill"]}
         onMouseMove={handleMouseMove}

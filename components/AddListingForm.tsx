@@ -386,7 +386,7 @@ export function AddListingForm({ initialData }: { initialData?: RealtorListingRo
   useEffect(() => {
     const supabase = createClient()
     supabase.auth.getUser().then(({ data: { user }, error }) => {
-      if (error || !user || user.user_metadata?.role !== "realtor") {
+      if (error || !user || user.user_metadata?.["role"] !== "realtor") {
         router.replace("/login")
         return
       }
@@ -442,6 +442,7 @@ export function AddListingForm({ initialData }: { initialData?: RealtorListingRo
       if (from === -1 || from === targetIndex) return prev
       const next = [...prev]
       const [moved] = next.splice(from, 1)
+      if (!moved) return prev
       next.splice(targetIndex, 0, moved)
       return next
     })
@@ -743,7 +744,7 @@ export function AddListingForm({ initialData }: { initialData?: RealtorListingRo
 
   if (authLoading) return <div className="min-h-screen bg-[#f0e9dc]" />
 
-  const today = new Date().toISOString().split("T")[0]
+  const today = new Date().toISOString().slice(0, 10)
 
   const pricePerSqft =
     Number(form.price) > 0 && Number(form.sqft) > 0
@@ -1190,7 +1191,7 @@ export function AddListingForm({ initialData }: { initialData?: RealtorListingRo
                   <div
                     key={`new-${i}`}
                     draggable
-                    onDragStart={() => { draggedFile.current = photoFiles[i] }}
+                    onDragStart={() => { draggedFile.current = photoFiles[i] ?? null }}
                     onDragEnd={() => { draggedFile.current = null }}
                     onDragOver={(e) => e.preventDefault()}
                     onDrop={(e) => handlePhotoDrop(e, i)}

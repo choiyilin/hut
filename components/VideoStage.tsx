@@ -6,7 +6,11 @@ const VIDEOS = [
   "/videos/bg-1.mp4",
   "/videos/bg-2.mp4",
   "/videos/bg-3.mp4",
-]
+] as const
+
+function videoAt(i: number): string {
+  return VIDEOS[i % VIDEOS.length] ?? VIDEOS[0]
+}
 
 export function VideoStage() {
   const vidARef = useRef<HTMLVideoElement>(null)
@@ -38,7 +42,7 @@ export function VideoStage() {
 
       setTimeout(() => {
         ;[active, standby] = [standby, active]
-        standby.src = VIDEOS[preloadIdx]
+        standby.src = videoAt(preloadIdx)
         standby.load()
         attachEndListener()
       }, 1150)
@@ -47,7 +51,7 @@ export function VideoStage() {
     // Boot — only fetch the first video; preload standby only after it's playing
     active.play().catch(() => {})
     active.addEventListener("playing", () => {
-      standby.src = VIDEOS[(idx + 1) % VIDEOS.length]
+      standby.src = videoAt(idx + 1)
       standby.load()
     }, { once: true })
     attachEndListener()
