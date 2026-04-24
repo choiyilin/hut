@@ -15,8 +15,7 @@ const SavedContext = createContext<SavedContextType>({
   isSaved: () => false,
 })
 
-const storageKey = (userId: string | null) =>
-  userId ? `hut_saved_${userId}` : "hut_saved_anon"
+const storageKey = (userId: string | null) => (userId ? `hut_saved_${userId}` : "hut_saved_anon")
 
 const loadFromStorage = (userId: string | null): Set<string> => {
   try {
@@ -45,7 +44,9 @@ export function SavedProvider({ children }: { children: React.ReactNode }) {
     })
 
     // Reload whenever the user logs in, logs out, or switches accounts
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_, session) => {
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_, session) => {
       userIdRef.current = session?.user?.id ?? null
       setSavedIds(loadFromStorage(userIdRef.current))
     })

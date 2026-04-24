@@ -3,7 +3,7 @@ import { createClient } from "@/lib/supabase/server"
 import { AddListingForm } from "@/components/AddListingForm"
 import type { RealtorListingRow } from "@/types"
 
-interface Props {
+type Props = {
   params: Promise<{ id: string }>
 }
 
@@ -13,7 +13,9 @@ export default async function EditListingPage({ params }: Props) {
   const { id } = await params
   const supabase = await createClient()
 
-  const { data: { user } } = await supabase.auth.getUser()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
   if (!user || user.user_metadata?.["role"] !== "realtor") redirect("/login")
 
   const { data } = await supabase

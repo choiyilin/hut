@@ -8,7 +8,7 @@ export async function POST(req: Request) {
   }
 
   const url = new URL(
-    `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(address)}.json`
+    `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(address)}.json`,
   )
   url.searchParams.set("access_token", mapboxToken)
   url.searchParams.set("country", "US")

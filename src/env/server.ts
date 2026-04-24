@@ -11,7 +11,7 @@ const ServerEnv = z.object({
 
 const parsed = ServerEnv.safeParse({
   MAPBOX_SECRET_TOKEN: process.env["MAPBOX_SECRET_TOKEN"],
-  NODE_ENV: process.env["NODE_ENV"],
+  NODE_ENV: process.env.NODE_ENV,
 })
 
 if (!parsed.success) {

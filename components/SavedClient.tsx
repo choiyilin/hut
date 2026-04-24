@@ -6,7 +6,7 @@ import { ListingCard } from "@/components/ListingCard"
 import { useSaved } from "@/contexts/SavedContext"
 import type { Listing } from "@/types"
 
-interface Props {
+type Props = {
   allListings: Listing[]
 }
 
@@ -18,12 +18,12 @@ export function SavedClient({ allListings }: Props) {
     <div className="min-h-screen bg-gray-50">
       <AppNav />
 
-      <div className="max-w-screen-xl mx-auto px-4 sm:px-6 py-10">
+      <div className="mx-auto max-w-screen-xl px-4 py-10 sm:px-6">
         <div className="mb-8">
-          <h1 className="text-5xl font-extrabold text-gray-900 tracking-tight leading-none mb-1">
+          <h1 className="mb-1 text-5xl leading-none font-extrabold tracking-tight text-gray-900">
             Saved
           </h1>
-          <p className="text-sm text-gray-500 mt-2">
+          <p className="mt-2 text-sm text-gray-500">
             {savedListings.length === 0
               ? "No saved listings yet"
               : `${savedListings.length} saved ${savedListings.length === 1 ? "listing" : "listings"}`}
@@ -32,22 +32,22 @@ export function SavedClient({ allListings }: Props) {
 
         {savedListings.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-32 text-center">
-            <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-5">
-              <i className="fa-regular fa-heart text-gray-300 text-2xl" />
+            <div className="mb-5 flex h-16 w-16 items-center justify-center rounded-full bg-gray-100">
+              <i className="fa-regular fa-heart text-2xl text-gray-300" />
             </div>
-            <h2 className="text-2xl font-extrabold text-gray-900 mb-2">Nothing saved yet</h2>
-            <p className="text-sm text-gray-400 mb-6 max-w-sm leading-relaxed">
+            <h2 className="mb-2 text-2xl font-extrabold text-gray-900">Nothing saved yet</h2>
+            <p className="mb-6 max-w-sm text-sm leading-relaxed text-gray-400">
               Heart any listing while browsing and it&apos;ll appear here.
             </p>
             <Link
               href="/listings"
-              className="px-6 py-2.5 bg-gray-900 text-white text-sm font-bold rounded-full hover:bg-gray-700 transition-colors"
+              className="rounded-full bg-gray-900 px-6 py-2.5 text-sm font-bold text-white transition-colors hover:bg-gray-700"
             >
               Browse listings
             </Link>
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5">
+          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-3">
             {savedListings.map((listing) => (
               <ListingCard key={listing.id} listing={listing} />
             ))}

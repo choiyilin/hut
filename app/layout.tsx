@@ -23,13 +23,10 @@ const jakarta = Plus_Jakarta_Sans({
 
 export const metadata: Metadata = {
   title: "HUT — Find Your Perfect Home",
-  description:
-    "Discover NYC rental apartments in the neighborhoods you actually want to live in.",
+  description: "Discover NYC rental apartments in the neighborhoods you actually want to live in.",
 }
 
-export default function RootLayout({
-  children,
-}: Readonly<{ children: React.ReactNode }>) {
+export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="en">
       <head>

@@ -1,6 +1,6 @@
 export type OpenHouseSlot = { date: string; time: string; notes: string }
 
-export interface Listing {
+export type Listing = {
   id: string
   title: string
   price: number
@@ -21,7 +21,14 @@ export interface Listing {
   // Phase 1 will replace this with Zod-derived types; transitional `| undefined`
   // here accommodates realtorRowToListing which emits explicit undefined.
   listingType?: "rent" | "sale" | undefined
-  propertyType?: "apartment" | "house" | "condo" | "townhouse" | "co-op" | "multi-family" | undefined
+  propertyType?:
+    | "apartment"
+    | "house"
+    | "condo"
+    | "townhouse"
+    | "co-op"
+    | "multi-family"
+    | undefined
   status?: "active" | "pending" | "off-market" | "draft" | undefined
   unitNumber?: string | undefined
   city?: string | undefined
@@ -206,7 +213,7 @@ export type SortOption = "newest" | "price-asc" | "price-desc" | "sqft-desc"
 export type BedFilter = "studio" | "1" | "2" | "3" | "4+"
 export type BathFilter = "1" | "2" | "3" | "4"
 
-export interface FilterState {
+export type FilterState = {
   search: string
   neighborhoods: string[]
   minPrice: number | ""
@@ -253,10 +260,7 @@ export function countActiveFilters(filters: FilterState): number {
  * Swap the data source in filterAndSortListings to migrate to a DB later —
  * the filter/sort logic itself doesn't change.
  */
-export function filterAndSortListings(
-  listings: Listing[],
-  filters: FilterState
-): Listing[] {
+export function filterAndSortListings(listings: Listing[], filters: FilterState): Listing[] {
   const q = filters.search.trim().toLowerCase()
 
   const filtered = listings.filter((listing) => {
@@ -270,12 +274,7 @@ export function filterAndSortListings(
 
     // ── Text search ─────────────────────────────────────────────
     if (q) {
-      const haystack = [
-        listing.title,
-        listing.address,
-        listing.neighborhood,
-        listing.description,
-      ]
+      const haystack = [listing.title, listing.address, listing.neighborhood, listing.description]
         .join(" ")
         .toLowerCase()
       if (!haystack.includes(q)) return false
@@ -288,16 +287,14 @@ export function filterAndSortListings(
       const match = filters.neighborhoods.some(
         (sel) =>
           sel === listing.neighborhood ||
-          (PARENT_TO_SUBS.get(sel)?.has(listing.neighborhood) ?? false)
+          (PARENT_TO_SUBS.get(sel)?.has(listing.neighborhood) ?? false),
       )
       if (!match) return false
     }
 
     // ── Price ─────────────────────────────────────────────────────
-    if (filters.minPrice !== "" && listing.price < filters.minPrice)
-      return false
-    if (filters.maxPrice !== "" && listing.price > filters.maxPrice)
-      return false
+    if (filters.minPrice !== "" && listing.price < filters.minPrice) return false
+    if (filters.maxPrice !== "" && listing.price > filters.maxPrice) return false
 
     // ── Beds (multi-select OR — matches any selected value) ───────
     if (filters.beds.length > 0) {
@@ -347,9 +344,7 @@ export function filterAndSortListings(
         // Featured listings surface first within the "newest" sort.
         // TODO: replace with DB-driven relevance/boost scoring.
         if (a.featured !== b.featured) return a.featured ? -1 : 1
-        return (
-          new Date(b.datePosted).getTime() - new Date(a.datePosted).getTime()
-        )
+        return new Date(b.datePosted).getTime() - new Date(a.datePosted).getTime()
     }
   })
 }

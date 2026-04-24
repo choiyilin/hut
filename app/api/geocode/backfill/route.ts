@@ -3,7 +3,7 @@ import { createClient } from "@/lib/supabase/server"
 
 async function geocode(address: string, token: string): Promise<[number, number] | null> {
   const url = new URL(
-    `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(address)}.json`
+    `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(address)}.json`,
   )
   url.searchParams.set("access_token", token)
   url.searchParams.set("country", "US")
@@ -43,9 +43,7 @@ export async function POST() {
       street = street.replace(`, Apt ${row.unit_number}`, "").replace(`, ${row.unit_number}`, "")
     }
     // Strip trailing ", City, State Zip" that was baked into address column
-    const tail = [row.city, `${row.state ?? ""} ${row.zip ?? ""}`.trim()]
-      .filter(Boolean)
-      .join(", ")
+    const tail = [row.city, `${row.state ?? ""} ${row.zip ?? ""}`.trim()].filter(Boolean).join(", ")
     if (tail && street.endsWith(`, ${tail}`)) {
       street = street.slice(0, street.length - tail.length - 2)
     }

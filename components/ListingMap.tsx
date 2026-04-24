@@ -5,7 +5,7 @@ import "mapbox-gl/dist/mapbox-gl.css"
 
 import { clientEnv } from "@/env/client"
 
-interface Props {
+type Props = {
   lat: number
   lng: number
 }
@@ -19,8 +19,8 @@ export function ListingMap({ lat, lng }: Props) {
       style={{ width: "100%", height: "100%" }}
     >
       <Marker longitude={lng} latitude={lat} anchor="bottom">
-        <div className="w-10 h-10 rounded-full bg-gray-900 flex items-center justify-center shadow-lg">
-          <i className="fa-solid fa-location-dot text-[#c9a96e] text-lg" />
+        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gray-900 shadow-lg">
+          <i className="fa-solid fa-location-dot text-lg text-[#c9a96e]" />
         </div>
       </Marker>
     </Map>

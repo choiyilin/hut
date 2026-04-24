@@ -17,16 +17,20 @@ import dynamic from "next/dynamic"
 
 const ListingsBrowseMap = dynamic(() => import("./ListingsBrowseMap"), {
   ssr: false,
-  loading: () => <div className="w-full h-full bg-gray-100 animate-pulse rounded-2xl" />,
+  loading: () => <div className="h-full w-full animate-pulse rounded-2xl bg-gray-100" />,
 })
 
-interface Props {
+type Props = {
   initialListings: Listing[]
   initialQuery: string
   initialListingType?: "rent" | "sale"
 }
 
-export function ListingsClient({ initialListings, initialQuery, initialListingType = "rent" }: Props) {
+export function ListingsClient({
+  initialListings,
+  initialQuery,
+  initialListingType = "rent",
+}: Props) {
   const [filters, setFilters] = useState<FilterState>({
     ...DEFAULT_FILTERS,
     search: initialQuery,
@@ -37,13 +41,10 @@ export function ListingsClient({ initialListings, initialQuery, initialListingTy
 
   const results = useMemo(
     () => filterAndSortListings(initialListings, filters),
-    [initialListings, filters]
+    [initialListings, filters],
   )
 
-  const reelsListings = useMemo(
-    () => results.filter((l) => Boolean(l.videoUrl)),
-    [results]
-  )
+  const reelsListings = useMemo(() => results.filter((l) => Boolean(l.videoUrl)), [results])
 
   const activeCount = countActiveFilters(filters)
 
@@ -56,20 +57,19 @@ export function ListingsClient({ initialListings, initialQuery, initialListingTy
     <div className="min-h-screen bg-gray-50">
       <AppNav />
 
-      <div className="max-w-screen-xl mx-auto px-4 sm:px-6 py-8">
-
+      <div className="mx-auto max-w-screen-xl px-4 py-8 sm:px-6">
         {/* ── Row 1: heading, then search + filters on same line ──────────── */}
         <div className="mb-6">
-          <h1 className="text-2xl sm:text-3xl lg:text-5xl font-extrabold text-gray-900 tracking-tight leading-none">
+          <h1 className="text-2xl leading-none font-extrabold tracking-tight text-gray-900 sm:text-3xl lg:text-5xl">
             {filters.listingType === "sale" ? "Homes for Sale" : "Browse Rentals"}
           </h1>
 
           {/* Desktop: search pill + filter pills on one row */}
           {view === "grid" && (
-            <div className="hidden lg:flex items-center gap-2 mt-4 flex-wrap">
-              <div className="relative flex-none w-64">
-                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                  <i className="fa-solid fa-magnifying-glass text-gray-300 text-sm" />
+            <div className="mt-4 hidden flex-wrap items-center gap-2 lg:flex">
+              <div className="relative w-64 flex-none">
+                <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-4">
+                  <i className="fa-solid fa-magnifying-glass text-sm text-gray-300" />
                 </div>
                 <input
                   type="text"
@@ -78,12 +78,12 @@ export function ListingsClient({ initialListings, initialQuery, initialListingTy
                   placeholder="Search neighborhood, address, or keyword…"
                   aria-label="Search listings"
                   autoComplete="off"
-                  className="w-full pl-10 pr-10 py-2.5 bg-white border-2 border-gray-200 rounded-full text-sm font-medium text-gray-800 placeholder:text-gray-400 placeholder:font-normal focus:outline-none focus:ring-2 focus:ring-gray-200 focus:border-gray-400 transition-all"
+                  className="w-full rounded-full border-2 border-gray-200 bg-white py-2.5 pr-10 pl-10 text-sm font-medium text-gray-800 transition-all placeholder:font-normal placeholder:text-gray-400 focus:border-gray-400 focus:ring-2 focus:ring-gray-200 focus:outline-none"
                 />
                 {filters.search && (
                   <button
                     onClick={() => handleChange({ search: "" })}
-                    className="absolute inset-y-0 right-0 pr-4 flex items-center text-gray-400 hover:text-gray-600 transition-colors"
+                    className="absolute inset-y-0 right-0 flex items-center pr-4 text-gray-400 transition-colors hover:text-gray-600"
                     aria-label="Clear search"
                   >
                     <i className="fa-solid fa-xmark text-xs" />
@@ -95,9 +95,9 @@ export function ListingsClient({ initialListings, initialQuery, initialListingTy
           )}
 
           {/* Mobile: full-width search input */}
-          <div className="lg:hidden mt-4 relative max-w-xl">
-            <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-              <i className="fa-solid fa-magnifying-glass text-gray-300 text-sm" />
+          <div className="relative mt-4 max-w-xl lg:hidden">
+            <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-4">
+              <i className="fa-solid fa-magnifying-glass text-sm text-gray-300" />
             </div>
             <input
               type="text"
@@ -106,12 +106,12 @@ export function ListingsClient({ initialListings, initialQuery, initialListingTy
               placeholder="Search neighborhood, address, or keyword…"
               aria-label="Search listings"
               autoComplete="off"
-              className="w-full pl-10 pr-10 py-3 bg-white border-2 border-gray-200 rounded-full text-sm font-medium text-gray-800 placeholder:text-gray-400 placeholder:font-normal focus:outline-none focus:ring-2 focus:ring-gray-200 focus:border-gray-400 transition-all"
+              className="w-full rounded-full border-2 border-gray-200 bg-white py-3 pr-10 pl-10 text-sm font-medium text-gray-800 transition-all placeholder:font-normal placeholder:text-gray-400 focus:border-gray-400 focus:ring-2 focus:ring-gray-200 focus:outline-none"
             />
             {filters.search && (
               <button
                 onClick={() => handleChange({ search: "" })}
-                className="absolute inset-y-0 right-0 pr-4 flex items-center text-gray-400 hover:text-gray-600 transition-colors"
+                className="absolute inset-y-0 right-0 flex items-center pr-4 text-gray-400 transition-colors hover:text-gray-600"
                 aria-label="Clear search"
               >
                 <i className="fa-solid fa-xmark text-xs" />
@@ -122,12 +122,11 @@ export function ListingsClient({ initialListings, initialQuery, initialListingTy
 
         {/* ── Row 2: controls+grid (left) | map (right, parallel with grid) ── */}
         <div className="flex gap-5">
-
           {/* Listings column */}
-          <div className="flex-1 min-w-0">
+          <div className="min-w-0 flex-1">
             {/* Controls bar */}
-            <div className="flex flex-wrap items-center justify-between mb-4 sm:mb-6 gap-2 sm:gap-3">
-              <p className="text-sm font-semibold text-gray-500 flex-shrink-0">
+            <div className="mb-4 flex flex-wrap items-center justify-between gap-2 sm:mb-6 sm:gap-3">
+              <p className="flex-shrink-0 text-sm font-semibold text-gray-500">
                 <span className="font-extrabold text-gray-900">
                   {view === "reels"
                     ? reelsListings.length.toLocaleString()
@@ -139,17 +138,17 @@ export function ListingsClient({ initialListings, initialQuery, initialListingTy
                 found
               </p>
 
-              <div className="flex items-center gap-2 flex-wrap justify-end">
+              <div className="flex flex-wrap items-center justify-end gap-2">
                 {/* Mobile filter button */}
                 {view === "grid" && (
                   <button
                     onClick={() => setMobileFilterOpen(true)}
-                    className="lg:hidden flex items-center gap-2 px-4 py-2.5 bg-gray-900 text-white rounded-full text-sm font-bold hover:bg-gray-700 transition-colors"
+                    className="flex items-center gap-2 rounded-full bg-gray-900 px-4 py-2.5 text-sm font-bold text-white transition-colors hover:bg-gray-700 lg:hidden"
                   >
                     <i className="fa-solid fa-sliders text-xs" />
                     Filters
                     {activeCount > 0 && (
-                      <span className="flex items-center justify-center w-5 h-5 rounded-full bg-white text-gray-900 text-[10px] font-extrabold">
+                      <span className="flex h-5 w-5 items-center justify-center rounded-full bg-white text-[10px] font-extrabold text-gray-900">
                         {activeCount}
                       </span>
                     )}
@@ -157,12 +156,12 @@ export function ListingsClient({ initialListings, initialQuery, initialListingTy
                 )}
 
                 {/* Rent / Buy toggle */}
-                <div className="flex items-center gap-1 p-1 bg-gray-100 rounded-full">
+                <div className="flex items-center gap-1 rounded-full bg-gray-100 p-1">
                   {(["rent", "sale"] as const).map((type) => (
                     <button
                       key={type}
                       onClick={() => handleChange({ listingType: type })}
-                      className={`px-3 py-1.5 rounded-full text-sm font-semibold transition-all ${
+                      className={`rounded-full px-3 py-1.5 text-sm font-semibold transition-all ${
                         filters.listingType === type
                           ? "bg-white text-gray-900 shadow-sm"
                           : "text-gray-500 hover:text-gray-700"
@@ -174,10 +173,10 @@ export function ListingsClient({ initialListings, initialQuery, initialListingTy
                 </div>
 
                 {/* View toggle */}
-                <div className="flex items-center gap-1 p-1 bg-gray-100 rounded-full">
+                <div className="flex items-center gap-1 rounded-full bg-gray-100 p-1">
                   <button
                     onClick={() => setView("grid")}
-                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-semibold transition-all ${
+                    className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-semibold transition-all ${
                       view === "grid"
                         ? "bg-white text-gray-900 shadow-sm"
                         : "text-gray-500 hover:text-gray-700"
@@ -189,7 +188,7 @@ export function ListingsClient({ initialListings, initialQuery, initialListingTy
                   </button>
                   <button
                     onClick={() => setView("reels")}
-                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-semibold transition-all ${
+                    className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-semibold transition-all ${
                       view === "reels"
                         ? "bg-white text-gray-900 shadow-sm"
                         : "text-gray-500 hover:text-gray-700"
@@ -210,7 +209,7 @@ export function ListingsClient({ initialListings, initialQuery, initialListingTy
                         handleChange({ sort: e.target.value as FilterState["sort"] })
                       }
                       aria-label="Sort listings"
-                      className="appearance-none pl-3 pr-8 py-2 bg-white border border-gray-200 rounded-full text-sm font-semibold text-gray-700 hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-200 cursor-pointer transition-colors"
+                      className="cursor-pointer appearance-none rounded-full border border-gray-200 bg-white py-2 pr-8 pl-3 text-sm font-semibold text-gray-700 transition-colors hover:border-gray-400 focus:ring-2 focus:ring-gray-200 focus:outline-none"
                     >
                       <option value="newest">Newest</option>
                       <option value="price-asc">Price: Low to High</option>
@@ -218,7 +217,7 @@ export function ListingsClient({ initialListings, initialQuery, initialListingTy
                       <option value="sqft-desc">Sqft: Large to Small</option>
                     </select>
                     <div className="pointer-events-none absolute inset-y-0 right-3 flex items-center">
-                      <i className="fa-solid fa-chevron-down text-gray-400 text-[9px]" />
+                      <i className="fa-solid fa-chevron-down text-[9px] text-gray-400" />
                     </div>
                   </div>
                 )}
@@ -229,24 +228,24 @@ export function ListingsClient({ initialListings, initialQuery, initialListingTy
             {view === "grid" &&
               (results.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-28 text-center">
-                  <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-5">
-                    <i className="fa-regular fa-face-frown text-gray-300 text-2xl" />
+                  <div className="mb-5 flex h-16 w-16 items-center justify-center rounded-full bg-gray-100">
+                    <i className="fa-regular fa-face-frown text-2xl text-gray-300" />
                   </div>
-                  <h2 className="text-2xl font-extrabold text-gray-900 mb-2">
+                  <h2 className="mb-2 text-2xl font-extrabold text-gray-900">
                     Nothing quite matches
                   </h2>
-                  <p className="text-sm text-gray-400 mb-6 max-w-sm leading-relaxed">
+                  <p className="mb-6 max-w-sm text-sm leading-relaxed text-gray-400">
                     Sorry, nothing quite matches your search criterion right now&hellip;
                   </p>
                   <button
                     onClick={clearAll}
-                    className="px-6 py-2.5 bg-gray-900 text-white text-sm rounded-full hover:bg-gray-700 transition-colors"
+                    className="rounded-full bg-gray-900 px-6 py-2.5 text-sm text-white transition-colors hover:bg-gray-700"
                   >
                     Clear all filters
                   </button>
                 </div>
               ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
                   {results.map((listing) => (
                     <ListingCard key={listing.id} listing={listing} />
                   ))}
@@ -256,8 +255,8 @@ export function ListingsClient({ initialListings, initialQuery, initialListingTy
 
           {/* Map — desktop only, parallel with grid */}
           {view === "grid" && (
-            <div className="hidden lg:block flex-none" style={{ width: "38%" }}>
-              <div className="sticky top-[77px] h-[calc(100vh-77px)] rounded-2xl overflow-hidden border border-gray-200 shadow-sm">
+            <div className="hidden flex-none lg:block" style={{ width: "38%" }}>
+              <div className="sticky top-[77px] h-[calc(100vh-77px)] overflow-hidden rounded-2xl border border-gray-200 shadow-sm">
                 <ListingsBrowseMap listings={results} />
               </div>
             </div>
@@ -271,23 +270,21 @@ export function ListingsClient({ initialListings, initialQuery, initialListingTy
           <button
             onClick={() => setView("grid")}
             aria-label="Back to grid view"
-            className="absolute top-4 left-4 z-50 flex items-center gap-2 pl-3 pr-4 py-2 rounded-full bg-black/50 text-white text-sm font-semibold backdrop-blur-md hover:bg-black/70 transition-colors"
+            className="absolute top-4 left-4 z-50 flex items-center gap-2 rounded-full bg-black/50 py-2 pr-4 pl-3 text-sm font-semibold text-white backdrop-blur-md transition-colors hover:bg-black/70"
           >
             <i className="fa-solid fa-arrow-left text-xs" />
             Back
           </button>
           {reelsListings.length === 0 ? (
-            <div className="flex flex-col items-center justify-center h-full bg-gray-900 text-center px-6">
-              <i className="fa-solid fa-film text-gray-700 text-5xl mb-4" />
-              <h2 className="text-2xl font-extrabold text-white mb-2">
-                No video listings
-              </h2>
-              <p className="text-sm text-gray-400 mb-6 max-w-sm leading-relaxed">
+            <div className="flex h-full flex-col items-center justify-center bg-gray-900 px-6 text-center">
+              <i className="fa-solid fa-film mb-4 text-5xl text-gray-700" />
+              <h2 className="mb-2 text-2xl font-extrabold text-white">No video listings</h2>
+              <p className="mb-6 max-w-sm text-sm leading-relaxed text-gray-400">
                 No video listings match your current filters.
               </p>
               <button
                 onClick={clearAll}
-                className="px-6 py-2.5 bg-white text-gray-900 text-sm font-bold rounded-full hover:bg-gray-100 transition-colors"
+                className="rounded-full bg-white px-6 py-2.5 text-sm font-bold text-gray-900 transition-colors hover:bg-gray-100"
               >
                 Clear all filters
               </button>
@@ -305,31 +302,26 @@ export function ListingsClient({ initialListings, initialQuery, initialListingTy
             className="absolute inset-0 bg-black/40 backdrop-blur-sm"
             onClick={() => setMobileFilterOpen(false)}
           />
-          <div className="absolute top-0 left-0 h-full w-80 max-w-[90vw] bg-white shadow-2xl flex flex-col">
-            <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 flex-shrink-0">
+          <div className="absolute top-0 left-0 flex h-full w-80 max-w-[90vw] flex-col bg-white shadow-2xl">
+            <div className="flex flex-shrink-0 items-center justify-between border-b border-gray-100 px-5 py-4">
               <h2 className="text-xl font-extrabold text-gray-900">Filters</h2>
               <button
                 onClick={() => setMobileFilterOpen(false)}
-                className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 transition-colors text-gray-500"
+                className="flex h-8 w-8 items-center justify-center rounded-full text-gray-500 transition-colors hover:bg-gray-100"
                 aria-label="Close filters"
               >
                 <i className="fa-solid fa-xmark text-sm" />
               </button>
             </div>
             <div className="flex-1 overflow-y-auto">
-              <FilterSidebar
-                filters={filters}
-                onChange={handleChange}
-                onClear={clearAll}
-              />
+              <FilterSidebar filters={filters} onChange={handleChange} onClear={clearAll} />
             </div>
-            <div className="p-4 border-t border-gray-100 flex-shrink-0">
+            <div className="flex-shrink-0 border-t border-gray-100 p-4">
               <button
                 onClick={() => setMobileFilterOpen(false)}
-                className="w-full py-3 bg-gray-900 text-white text-sm font-bold rounded-full hover:bg-gray-700 transition-colors"
+                className="w-full rounded-full bg-gray-900 py-3 text-sm font-bold text-white transition-colors hover:bg-gray-700"
               >
-                Show{" "}
-                {results.length === 0 ? "no" : results.length.toLocaleString()}{" "}
+                Show {results.length === 0 ? "no" : results.length.toLocaleString()}{" "}
                 {results.length === 1 ? "result" : "results"}
               </button>
             </div>

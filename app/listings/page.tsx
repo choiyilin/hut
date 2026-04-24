@@ -6,7 +6,7 @@ import { mapboxToken } from "@/env/server"
 import { createClient } from "@/lib/supabase/server"
 
 // In Next.js 16, searchParams is a Promise
-interface Props {
+type Props = {
   searchParams: Promise<{ q?: string; type?: string; _r?: string }>
 }
 
@@ -18,7 +18,7 @@ async function geocodeMissing(listings: Listing[]): Promise<Listing[]> {
       if (listing.lat !== 0 || listing.lng !== 0) return listing
       try {
         const url = new URL(
-          `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(listing.address)}.json`
+          `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(listing.address)}.json`,
         )
         url.searchParams.set("access_token", mapboxToken)
         url.searchParams.set("country", "US")
@@ -31,7 +31,7 @@ async function geocodeMissing(listings: Listing[]): Promise<Listing[]> {
         if (center) return { ...listing, lng: center[0], lat: center[1] }
       } catch {}
       return listing
-    })
+    }),
   )
 }
 

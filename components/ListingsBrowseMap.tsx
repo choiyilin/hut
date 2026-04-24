@@ -13,31 +13,21 @@ const NYC_BOUNDS: [[number, number], [number, number]] = [
   [-73.7, 40.917],
 ]
 
-interface Props {
+type Props = {
   listings: Listing[]
 }
 
 // ── Price pill marker ────────────────────────────────────────────────────────
 
-function PricePill({
-  price,
-  selected,
-}: {
-  price: number
-  selected: boolean
-}) {
+function PricePill({ price, selected }: { price: number; selected: boolean }) {
   const label = price >= 1000 ? `$${Math.round(price / 1000)}k` : `$${price}`
   return (
     <div
-      className={`
-        px-2.5 py-1 rounded-full text-xs font-bold shadow-md cursor-pointer
-        select-none transition-all duration-150 whitespace-nowrap
-        ${
-          selected
-            ? "bg-[#c9a96e] text-gray-900 shadow-lg scale-110 ring-2 ring-white"
-            : "bg-gray-900 text-white hover:bg-gray-700 hover:scale-105"
-        }
-      `}
+      className={`cursor-pointer rounded-full px-2.5 py-1 text-xs font-bold whitespace-nowrap shadow-md transition-all duration-150 select-none ${
+        selected
+          ? "scale-110 bg-[#c9a96e] text-gray-900 shadow-lg ring-2 ring-white"
+          : "bg-gray-900 text-white hover:scale-105 hover:bg-gray-700"
+      } `}
     >
       {label}
     </div>
@@ -54,7 +44,7 @@ function MiniCard({ listing }: { listing: Listing }) {
       href={`/listings/${listing.id}`}
       target="_blank"
       rel="noopener noreferrer"
-      className="block no-underline group"
+      className="group block no-underline"
       onClick={(e) => e.stopPropagation()}
     >
       <div className="w-[220px]">
@@ -63,34 +53,32 @@ function MiniCard({ listing }: { listing: Listing }) {
           <img
             src={listing.imageUrl}
             alt={listing.title}
-            className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+            className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
           />
           {listing.featured && (
-            <span className="absolute top-2 left-2 bg-[#c9a96e] text-gray-900 text-[10px] font-extrabold px-2 py-0.5 rounded-full uppercase tracking-wide">
+            <span className="absolute top-2 left-2 rounded-full bg-[#c9a96e] px-2 py-0.5 text-[10px] font-extrabold tracking-wide text-gray-900 uppercase">
               ★ Featured
             </span>
           )}
         </div>
         <div className="p-3">
-          <div className="flex items-baseline gap-1 mb-0.5">
+          <div className="mb-0.5 flex items-baseline gap-1">
             <span className="text-sm font-bold text-gray-900">
               ${listing.price.toLocaleString()}
             </span>
             {listing.listingType !== "sale" && (
-              <span className="text-[11px] text-gray-400 font-medium">/mo</span>
+              <span className="text-[11px] font-medium text-gray-400">/mo</span>
             )}
           </div>
-          <p className="text-[11px] text-gray-500 font-medium truncate mb-2">
-            {listing.title}
-          </p>
-          <div className="flex gap-1 flex-wrap">
-            <span className="bg-gray-100 text-gray-700 text-[10px] font-bold px-2 py-0.5 rounded-full">
+          <p className="mb-2 truncate text-[11px] font-medium text-gray-500">{listing.title}</p>
+          <div className="flex flex-wrap gap-1">
+            <span className="rounded-full bg-gray-100 px-2 py-0.5 text-[10px] font-bold text-gray-700">
               {bedLabel}
             </span>
-            <span className="bg-gray-100 text-gray-700 text-[10px] font-bold px-2 py-0.5 rounded-full">
+            <span className="rounded-full bg-gray-100 px-2 py-0.5 text-[10px] font-bold text-gray-700">
               {listing.baths} ba
             </span>
-            <span className="bg-gray-100 text-gray-700 text-[10px] font-bold px-2 py-0.5 rounded-full">
+            <span className="rounded-full bg-gray-100 px-2 py-0.5 text-[10px] font-bold text-gray-700">
               {listing.sqft.toLocaleString()} ft²
             </span>
           </div>
@@ -110,10 +98,7 @@ export function ListingsBrowseMap({ listings }: Props) {
   const [selectedId, setSelectedId] = useState<string | null>(null)
 
   // Only listings with real geocoordinates (AddListingForm defaults to 0,0)
-  const geoListings = useMemo(
-    () => listings.filter((l) => l.lat !== 0 && l.lng !== 0),
-    [listings]
-  )
+  const geoListings = useMemo(() => listings.filter((l) => l.lat !== 0 && l.lng !== 0), [listings])
 
   const selected = geoListings.find((l) => l.id === selectedId) ?? null
 
@@ -143,7 +128,7 @@ export function ListingsBrowseMap({ listings }: Props) {
         [Math.min(...lngs), Math.min(...lats)],
         [Math.max(...lngs), Math.max(...lats)],
       ],
-      { padding: 64, maxZoom: 15, duration: 700 }
+      { padding: 64, maxZoom: 15, duration: 700 },
     )
   }, [listings])
 
@@ -178,15 +163,10 @@ export function ListingsBrowseMap({ listings }: Props) {
           anchor="bottom"
           onClick={(e) => {
             e.originalEvent.stopPropagation()
-            setSelectedId((prev) =>
-              prev === listing.id ? null : listing.id
-            )
+            setSelectedId((prev) => (prev === listing.id ? null : listing.id))
           }}
         >
-          <PricePill
-            price={listing.price}
-            selected={selectedId === listing.id}
-          />
+          <PricePill price={listing.price} selected={selectedId === listing.id} />
         </Marker>
       ))}
 

@@ -5,7 +5,7 @@ import { realtorRowToListing, type RealtorListingRow } from "@/types"
 import { ListingDetail } from "@/components/ListingDetail"
 import { createClient } from "@/lib/supabase/server"
 
-interface Props {
+type Props = {
   params: Promise<{ id: string }>
 }
 

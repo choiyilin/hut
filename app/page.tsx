@@ -66,17 +66,12 @@ export default function HomePage() {
               spellCheck={false}
               className={styles["searchInput"]}
             />
-            <button
-              type="submit"
-              className={styles["searchBtn"]}
-              aria-label="Search"
-            >
+            <button type="submit" className={styles["searchBtn"]} aria-label="Search">
               <i className="fa-solid fa-magnifying-glass" />
             </button>
           </form>
         </div>
       </main>
-
     </>
   )
 }
