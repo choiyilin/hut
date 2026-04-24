@@ -2,6 +2,7 @@ import type { Listing } from "@/types"
 import { realtorRowToListing, type RealtorListingRow } from "@/types"
 import listingsData from "@/data/listings.json"
 import { ListingsClient } from "@/components/ListingsClient"
+import { mapboxToken } from "@/env/server"
 import { createClient } from "@/lib/supabase/server"
 
 // In Next.js 16, searchParams is a Promise
@@ -10,8 +11,7 @@ interface Props {
 }
 
 async function geocodeMissing(listings: Listing[]): Promise<Listing[]> {
-  const token = process.env.MAPBOX_SECRET_TOKEN ?? process.env.NEXT_PUBLIC_MAPBOX_TOKEN
-  if (!token) return listings
+  if (!mapboxToken) return listings
 
   return Promise.all(
     listings.map(async (listing) => {
@@ -20,7 +20,7 @@ async function geocodeMissing(listings: Listing[]): Promise<Listing[]> {
         const url = new URL(
           `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(listing.address)}.json`
         )
-        url.searchParams.set("access_token", token)
+        url.searchParams.set("access_token", mapboxToken)
         url.searchParams.set("country", "US")
         url.searchParams.set("proximity", "-73.998,40.732")
         url.searchParams.set("types", "address")

@@ -1,3 +1,4 @@
+import { mapboxToken } from "@/env/server"
 import { createClient } from "@/lib/supabase/server"
 
 async function geocode(address: string, token: string): Promise<[number, number] | null> {
@@ -16,8 +17,6 @@ async function geocode(address: string, token: string): Promise<[number, number]
 }
 
 export async function POST() {
-  const mapboxToken = process.env.MAPBOX_SECRET_TOKEN ?? process.env.NEXT_PUBLIC_MAPBOX_TOKEN
-
   if (!mapboxToken) {
     return Response.json({ error: "Missing Mapbox token in .env.local" }, { status: 500 })
   }

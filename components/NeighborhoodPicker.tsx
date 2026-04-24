@@ -57,10 +57,11 @@ function IndeterminateCheckbox({
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 function barLabel(selected: string[]): string {
+  const [first = "", second = ""] = selected
   if (selected.length === 0) return "All neighborhoods"
-  if (selected.length === 1) return selected[0]
-  if (selected.length === 2) return `${selected[0]}, ${selected[1]}`
-  return `${selected[0]}, ${selected[1]} +${selected.length - 2}`
+  if (selected.length === 1) return first
+  if (selected.length === 2) return `${first}, ${second}`
+  return `${first}, ${second} +${selected.length - 2}`
 }
 
 function areaNamesOf(area: NeighborhoodArea) {

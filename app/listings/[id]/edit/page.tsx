@@ -14,7 +14,7 @@ export default async function EditListingPage({ params }: Props) {
   const supabase = await createClient()
 
   const { data: { user } } = await supabase.auth.getUser()
-  if (!user || user.user_metadata?.role !== "realtor") redirect("/login")
+  if (!user || user.user_metadata?.["role"] !== "realtor") redirect("/login")
 
   const { data } = await supabase
     .from("realtor_listings")

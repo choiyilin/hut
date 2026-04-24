@@ -62,7 +62,7 @@ export function ListingDetail({ listing }: Props) {
           {/* Main image */}
           <div className="relative aspect-[4/3] lg:aspect-auto lg:h-[480px]">
             <Image
-              src={gallery[activeImg]}
+              src={gallery[activeImg] ?? listing.imageUrl}
               alt={listing.title}
               fill
               className="object-cover"

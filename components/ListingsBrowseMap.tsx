@@ -6,6 +6,8 @@ import type { MapRef } from "react-map-gl/mapbox"
 import type { Listing } from "@/types"
 import "mapbox-gl/dist/mapbox-gl.css"
 
+import { clientEnv } from "@/env/client"
+
 const NYC_BOUNDS: [[number, number], [number, number]] = [
   [-74.259, 40.477],
   [-73.7, 40.917],
@@ -124,9 +126,10 @@ export function ListingsBrowseMap({ listings }: Props) {
       return
     }
 
-    if (geoListings.length === 1) {
+    const only = geoListings[0]
+    if (geoListings.length === 1 && only) {
       map.flyTo({
-        center: [geoListings[0].lng, geoListings[0].lat],
+        center: [only.lng, only.lat],
         zoom: 15,
         duration: 700,
       })
@@ -159,7 +162,7 @@ export function ListingsBrowseMap({ listings }: Props) {
       ref={mapRef}
       initialViewState={{ latitude: 40.732, longitude: -73.998, zoom: 11.4 }}
       mapStyle="mapbox://styles/mapbox/light-v11"
-      mapboxAccessToken={process.env.NEXT_PUBLIC_MAPBOX_TOKEN}
+      mapboxAccessToken={clientEnv.NEXT_PUBLIC_MAPBOX_TOKEN}
       style={{ width: "100%", height: "100%" }}
       reuseMaps
       onLoad={fitBounds}

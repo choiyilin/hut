@@ -34,7 +34,7 @@ export default function ProfilePage() {
   }, [router])
 
   useEffect(() => {
-    if (!user || user.user_metadata?.role !== "realtor") return
+    if (!user || user.user_metadata?.["role"] !== "realtor") return
     setRealtorLoading(true)
     const supabase = createClient()
     supabase
@@ -82,7 +82,7 @@ export default function ProfilePage() {
 
   if (!user) return null
 
-  const isRealtor = user.user_metadata?.role === "realtor"
+  const isRealtor = user.user_metadata?.["role"] === "realtor"
 
   const initials = user.email
     ? user.email.slice(0, 2).toUpperCase()
