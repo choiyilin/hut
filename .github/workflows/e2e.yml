@@ -1,0 +1,49 @@
+name: E2E
+
+# Phase 0 ships this as manual-only. Phase 7 wires it to PR previews so every
+# PR gets golden-path coverage against its Vercel preview deploy.
+on:
+  workflow_dispatch:
+    inputs:
+      base_url:
+        description: "Base URL to test against (defaults to local dev server with placeholder env)"
+        required: false
+        type: string
+
+jobs:
+  e2e:
+    name: Playwright golden paths
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    env:
+      NEXT_PUBLIC_SUPABASE_URL: https://placeholder.supabase.co
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ci-placeholder-anon-key
+      NEXT_PUBLIC_MAPBOX_TOKEN: ci-placeholder-mapbox-token
+      PLAYWRIGHT_BASE_URL: ${{ inputs.base_url }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Install Playwright browsers
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: Run E2E
+        run: pnpm e2e
+
+      - name: Upload report on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report-${{ github.run_id }}
+          path: playwright-report/
+          retention-days: 14
