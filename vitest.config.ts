@@ -16,10 +16,11 @@ export default defineConfig({
       include: ["src/**/*.{ts,tsx}"],
       exclude: ["src/**/*.{test,spec}.{ts,tsx}", "src/**/__tests__/**", "src/**/*.d.ts"],
       thresholds: {
-        // Phase 1: enforce 100% on schemas + domain (the structures of truth).
-        // Phase 7 will add features/* and app/* tiers.
+        // Phase 1+2: enforce 100% on the structures of truth and their adapters.
+        // Phase 7 adds features/* and app/* tiers.
         "src/schemas/**": { lines: 100, branches: 100, functions: 100, statements: 100 },
         "src/domain/**": { lines: 100, branches: 100, functions: 100, statements: 100 },
+        "src/lib/**": { lines: 100, branches: 100, functions: 100, statements: 100 },
       },
     },
   },
