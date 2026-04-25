@@ -58,8 +58,16 @@ export default defineConfig([
       "no-console": ["error", { allow: ["warn", "error"] }],
       "no-restricted-syntax": [
         "error",
+        // `as Foo` (any TSTypeReference except `as const`).
         {
-          selector: "TSAsExpression:not([typeAnnotation.type='TSLiteralType'])",
+          selector:
+            "TSAsExpression[typeAnnotation.type='TSTypeReference'][typeAnnotation.typeName.name!='const']",
+          message:
+            "Type assertions are banned. Use Zod to parse at boundaries, or `as const` for literals.",
+        },
+        // `as unknown`, `as { foo: 1 }`, `as Foo[]`, etc — anything not a type reference.
+        {
+          selector: "TSAsExpression[typeAnnotation.type!='TSTypeReference']",
           message:
             "Type assertions are banned. Use Zod to parse at boundaries, or `as const` for literals.",
         },
@@ -105,14 +113,19 @@ export default defineConfig([
   },
 
   // Test files — relax the production-only bans. Tests legitimately need to
-  // construct invalid fixtures (e.g. `as never` for "what if a wrong enum
-  // value lands in this column") to exercise validation paths. Production
-  // code stays strict; tests prove the strict code rejects garbage.
+  // construct invalid fixtures (e.g. `as never`, fake clients with `unknown
+  // as ClientType`) to exercise validation paths and stub external systems.
+  // Production code stays strict; tests prove the strict code rejects garbage.
   {
     files: ["tests/**/*.{ts,tsx}", "src/**/*.{test,spec}.{ts,tsx}"],
     rules: {
       "no-restricted-syntax": "off",
       "@typescript-eslint/no-non-null-assertion": "off",
+      "@typescript-eslint/no-unsafe-argument": "off",
+      "@typescript-eslint/no-unsafe-assignment": "off",
+      "@typescript-eslint/no-unsafe-call": "off",
+      "@typescript-eslint/no-unsafe-member-access": "off",
+      "@typescript-eslint/no-unsafe-return": "off",
     },
   },
 
