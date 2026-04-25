@@ -1,15 +1,9 @@
 import { defineConfig } from "vitest/config"
-import path from "node:path"
 
 export default defineConfig({
-  resolve: {
-    // Mirror the tsconfig "paths" rule: `@/foo` resolves to `src/foo` first,
-    // then falls back to the repo root for legacy modules not yet migrated.
-    alias: [
-      { find: /^@\/(.*)$/, replacement: path.resolve(__dirname, "src/$1") },
-      { find: /^@\/(.*)$/, replacement: path.resolve(__dirname, "$1") },
-    ],
-  },
+  // Honors the `paths` field in tsconfig.json — keeps `@/foo` resolution
+  // identical between tsc, Next.js, and Vitest.
+  resolve: { tsconfigPaths: true },
   test: {
     environment: "jsdom",
     globals: true,
@@ -22,12 +16,10 @@ export default defineConfig({
       include: ["src/**/*.{ts,tsx}"],
       exclude: ["src/**/*.{test,spec}.{ts,tsx}", "src/**/__tests__/**", "src/**/*.d.ts"],
       thresholds: {
-        // Phase 0: baseline. Phase 7 promotes these to the final targets:
-        //   domain/**, lib/**, schemas/** → 100% line+branch+function
-        //   features/**                    → 90%/85%/90%
-        //   app/**                         → 80%
-        // For now we only require that the instrumented files we DO have tests
-        // for pass — thresholds are left empty so new test files set the bar.
+        // Phase 1: enforce 100% on schemas + domain (the structures of truth).
+        // Phase 7 will add features/* and app/* tiers.
+        "src/schemas/**": { lines: 100, branches: 100, functions: 100, statements: 100 },
+        "src/domain/**": { lines: 100, branches: 100, functions: 100, statements: 100 },
       },
     },
   },
