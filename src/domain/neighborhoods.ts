@@ -1,14 +1,16 @@
-import { NYC_BOROUGHS } from "@/data/nyc-neighborhoods"
+import { NYC_BOROUGHS, type BoroughData } from "@/data/nyc-neighborhoods"
 
 // ── Parent → sub-neighborhood expansion ──────────────────────────────────────
 //
 // Selecting a parent neighborhood (e.g. "Chelsea") in the filter also matches
 // its indented sub-neighborhoods (e.g. "West Chelsea"). Selecting a sub matches
-// only that sub. Built once at module load from the curated NYC_BOROUGHS data.
+// only that sub. Pure builder so tests can drive it with malformed fixtures.
 
-export const PARENT_TO_SUBS: ReadonlyMap<string, ReadonlySet<string>> = (() => {
+export function buildParentToSubs(
+  boroughs: readonly BoroughData[],
+): ReadonlyMap<string, ReadonlySet<string>> {
   const map = new Map<string, Set<string>>()
-  for (const borough of NYC_BOROUGHS) {
+  for (const borough of boroughs) {
     for (const area of borough.areas) {
       let parent: string | null = null
       let subs = new Set<string>()
@@ -20,12 +22,16 @@ export const PARENT_TO_SUBS: ReadonlyMap<string, ReadonlySet<string>> = (() => {
         } else if (parent) {
           subs.add(n.name)
         }
+        // else: sub-neighborhood encountered before any parent in this area —
+        // malformed data, silently skipped (curated data never hits this).
       }
       if (parent && subs.size > 0) map.set(parent, new Set(subs))
     }
   }
   return map
-})()
+}
+
+export const PARENT_TO_SUBS = buildParentToSubs(NYC_BOROUGHS)
 
 /**
  * True if `listingNeighborhood` matches any of the user's selected

@@ -104,19 +104,15 @@ export default defineConfig([
     },
   },
 
-  // Test files — allow process.env (rare, mostly for skip flags) but keep the
-  // `as` ban so tests exercise real types. Disable the deprecated-API warning
-  // because Testing Library matchers occasionally emit them.
+  // Test files — relax the production-only bans. Tests legitimately need to
+  // construct invalid fixtures (e.g. `as never` for "what if a wrong enum
+  // value lands in this column") to exercise validation paths. Production
+  // code stays strict; tests prove the strict code rejects garbage.
   {
     files: ["tests/**/*.{ts,tsx}", "src/**/*.{test,spec}.{ts,tsx}"],
     rules: {
-      "no-restricted-syntax": [
-        "error",
-        {
-          selector: "TSAsExpression:not([typeAnnotation.type='TSLiteralType'])",
-          message: "Use Zod to parse fixtures, or `as const` for literals.",
-        },
-      ],
+      "no-restricted-syntax": "off",
+      "@typescript-eslint/no-non-null-assertion": "off",
     },
   },
 
