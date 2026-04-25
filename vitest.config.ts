@@ -3,10 +3,11 @@ import path from "node:path"
 
 export default defineConfig({
   resolve: {
+    // Mirror the tsconfig "paths" rule: `@/foo` resolves to `src/foo` first,
+    // then falls back to the repo root for legacy modules not yet migrated.
     alias: [
       { find: /^@\/(.*)$/, replacement: path.resolve(__dirname, "src/$1") },
-      // Fallback to repo root for legacy paths not yet migrated to src/.
-      { find: /^@legacy\/(.*)$/, replacement: path.resolve(__dirname, "$1") },
+      { find: /^@\/(.*)$/, replacement: path.resolve(__dirname, "$1") },
     ],
   },
   test: {
