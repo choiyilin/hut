@@ -1,0 +1,21 @@
+-- Schema snapshot — paste your current production Supabase schema here.
+--
+-- How to export from production:
+--   1. Supabase Dashboard → Database → Schema Visualizer → Export SQL
+--      OR via CLI: `supabase db dump --schema public --file schema.sql`
+--   2. Paste the CREATE TABLE / CREATE POLICY / CREATE INDEX statements below.
+--
+-- This file is the source of truth for:
+--   - Generating types into src/lib/supabase/types.ts (Phase 0 task #6)
+--   - Audit of current RLS policies (Phase 2 will add proper RLS)
+--   - Reproducing prod schema in local Supabase / CI / preview environments
+--
+-- Tables expected (from code reads):
+--   - realtor_listings (with snake_case columns matching RealtorListingRow type)
+--   - storage.objects rows under buckets: listing-photos, listing-videos,
+--     listing-floor-plans
+--   - auth.users with user_metadata.role in ("renter", "realtor")
+--
+-- ⚠️  Do NOT include real user data, secrets, or PII.
+
+-- ── PASTE BELOW ───────────────────────────────────────────────────────────────
