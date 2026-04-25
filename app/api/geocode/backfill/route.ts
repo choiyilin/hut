@@ -1,26 +1,41 @@
-import { mapboxToken } from "@/env/server"
+import { geocode, type GeocodeResult } from "@/lib/mapbox/geocode"
 import { createClient } from "@/lib/supabase/server"
 
-async function geocode(address: string, token: string): Promise<[number, number] | null> {
-  const url = new URL(
-    `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(address)}.json`,
-  )
-  url.searchParams.set("access_token", token)
-  url.searchParams.set("country", "US")
-  url.searchParams.set("proximity", "-73.998,40.732")
-  url.searchParams.set("limit", "1")
-
-  const res = await fetch(url.toString())
-  const data = await res.json()
-  const center = data.features?.[0]?.center
-  return center ? [center[0], center[1]] : null
+type BackfillRow = {
+  id: string
+  address: string
+  unit_number: string | null
+  city: string | null
+  state: string | null
+  zip: string | null
 }
 
-export async function POST() {
-  if (!mapboxToken) {
-    return Response.json({ error: "Missing Mapbox token in .env.local" }, { status: 500 })
-  }
+type BackfillResult = {
+  id: string
+  geocoded: string
+  lat: number
+  lng: number
+  outcome: GeocodeResult["kind"] | "db-error"
+}
 
+/**
+ * Strip unit number and trailing ", City, State Zip" baked into the address
+ * column, then re-compose using explicit city/state/zip fields. Same logic as
+ * before — promoted out of the route handler so it's testable in isolation.
+ */
+function composeGeocodeAddress(row: BackfillRow): string {
+  let street = row.address
+  if (row.unit_number) {
+    street = street.replace(`, Apt ${row.unit_number}`, "").replace(`, ${row.unit_number}`, "")
+  }
+  const tail = [row.city, `${row.state ?? ""} ${row.zip ?? ""}`.trim()].filter(Boolean).join(", ")
+  if (tail && street.endsWith(`, ${tail}`)) {
+    street = street.slice(0, street.length - tail.length - 2)
+  }
+  return [street, row.city, row.state, row.zip].filter(Boolean).join(", ")
+}
+
+export async function POST(): Promise<Response> {
   const supabase = await createClient()
 
   const { data: rows, error: fetchErr } = await supabase
@@ -34,42 +49,34 @@ export async function POST() {
     return Response.json({ updated: 0, message: "No zero-coord listings found." })
   }
 
-  const results: { id: string; geocoded: string; lat: number; lng: number; ok: boolean }[] = []
+  const results: BackfillResult[] = []
 
-  for (const row of rows) {
-    // Strip unit number from address, then append city/state/zip separately
-    let street = row.address as string
-    if (row.unit_number) {
-      street = street.replace(`, Apt ${row.unit_number}`, "").replace(`, ${row.unit_number}`, "")
-    }
-    // Strip trailing ", City, State Zip" that was baked into address column
-    const tail = [row.city, `${row.state ?? ""} ${row.zip ?? ""}`.trim()].filter(Boolean).join(", ")
-    if (tail && street.endsWith(`, ${tail}`)) {
-      street = street.slice(0, street.length - tail.length - 2)
-    }
+  for (const row of rows as BackfillRow[]) {
+    const address = composeGeocodeAddress(row)
+    // bypassCache so the backfill always re-resolves against current data,
+    // even if a previous request cached a not-found.
+    const result = await geocode(address, { bypassCache: true })
 
-    const geocodeStr = [street, row.city, row.state, row.zip].filter(Boolean).join(", ")
-
-    try {
-      const center = await geocode(geocodeStr, mapboxToken)
-
-      if (!center) {
-        results.push({ id: row.id, geocoded: geocodeStr, lat: 0, lng: 0, ok: false })
-        continue
-      }
-
-      const [lng, lat] = center
+    if (result.kind === "found") {
       const { error: updateErr } = await supabase
         .from("realtor_listings")
-        .update({ lat, lng })
+        .update({ lat: result.coords.lat, lng: result.coords.lng })
         .eq("id", row.id)
-
-      results.push({ id: row.id, geocoded: geocodeStr, lat, lng, ok: !updateErr })
-    } catch {
-      results.push({ id: row.id, geocoded: geocodeStr, lat: 0, lng: 0, ok: false })
+      results.push({
+        id: row.id,
+        geocoded: address,
+        lat: result.coords.lat,
+        lng: result.coords.lng,
+        outcome: updateErr ? "db-error" : "found",
+      })
+    } else {
+      results.push({ id: row.id, geocoded: address, lat: 0, lng: 0, outcome: result.kind })
     }
+
+    // Stop early if we're rate-limited — let the caller retry later.
+    if (result.kind === "rate-limited") break
   }
 
-  const updated = results.filter((r) => r.ok).length
+  const updated = results.filter((r) => r.outcome === "found").length
   return Response.json({ updated, total: rows.length, results })
 }
