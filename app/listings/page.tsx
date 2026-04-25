@@ -2,7 +2,7 @@ import type { Listing } from "@/types"
 import { realtorRowToListing, type RealtorListingRow } from "@/types"
 import listingsData from "@/data/listings.json"
 import { ListingsClient } from "@/components/ListingsClient"
-import { mapboxToken } from "@/env/server"
+import { geocode } from "@/lib/mapbox/geocode"
 import { createClient } from "@/lib/supabase/server"
 
 // In Next.js 16, searchParams is a Promise
@@ -11,25 +11,16 @@ type Props = {
 }
 
 async function geocodeMissing(listings: Listing[]): Promise<Listing[]> {
-  if (!mapboxToken) return listings
-
   return Promise.all(
     listings.map(async (listing) => {
       if (listing.lat !== 0 || listing.lng !== 0) return listing
-      try {
-        const url = new URL(
-          `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(listing.address)}.json`,
-        )
-        url.searchParams.set("access_token", mapboxToken)
-        url.searchParams.set("country", "US")
-        url.searchParams.set("proximity", "-73.998,40.732")
-        url.searchParams.set("types", "address")
-        url.searchParams.set("limit", "1")
-        const res = await fetch(url.toString())
-        const data = await res.json()
-        const center = data.features?.[0]?.center
-        if (center) return { ...listing, lng: center[0], lat: center[1] }
-      } catch {}
+      const result = await geocode(listing.address)
+      if (result.kind === "found") {
+        return { ...listing, lat: result.coords.lat, lng: result.coords.lng }
+      }
+      // not-found / rate-limited / timeout / upstream-error / config-error:
+      // leave the listing's existing 0,0 so the map filter excludes it.
+      // Phase 7 dashboard surfaces these so realtors see why their pin is missing.
       return listing
     }),
   )

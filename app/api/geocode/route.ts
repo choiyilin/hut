@@ -1,32 +1,31 @@
-import { mapboxToken } from "@/env/server"
+import { z } from "zod"
 
-export async function POST(req: Request) {
-  const { address } = await req.json()
+import { geocode } from "@/lib/mapbox/geocode"
 
-  if (!mapboxToken || !address?.trim()) {
-    return Response.json({ error: "bad request" }, { status: 400 })
+const RequestSchema = z.object({ address: z.string().trim().min(1) })
+
+export async function POST(req: Request): Promise<Response> {
+  const body: unknown = await req.json().catch(() => null)
+  const parsed = RequestSchema.safeParse(body)
+  if (!parsed.success) return Response.json({ error: "bad request" }, { status: 400 })
+
+  const result = await geocode(parsed.data.address)
+
+  switch (result.kind) {
+    case "found":
+      return Response.json({ lat: result.coords.lat, lng: result.coords.lng })
+    case "not-found":
+      return Response.json({ error: "address not found" }, { status: 404 })
+    case "rate-limited":
+      return Response.json(
+        { error: "rate limited", retryAfterMs: result.retryAfterMs },
+        { status: 429, headers: { "retry-after": String(Math.ceil(result.retryAfterMs / 1000)) } },
+      )
+    case "timeout":
+      return Response.json({ error: "geocoding timed out" }, { status: 504 })
+    case "upstream-error":
+      return Response.json({ error: "geocoding failed" }, { status: 502 })
+    case "config-error":
+      return Response.json({ error: result.reason }, { status: 500 })
   }
-
-  const url = new URL(
-    `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(address)}.json`,
-  )
-  url.searchParams.set("access_token", mapboxToken)
-  url.searchParams.set("country", "US")
-  url.searchParams.set("proximity", "-73.998,40.732")
-  url.searchParams.set("types", "address")
-  url.searchParams.set("limit", "1")
-
-  const res = await fetch(url.toString())
-  if (!res.ok) {
-    return Response.json({ error: "geocoding failed" }, { status: 502 })
-  }
-
-  const data = await res.json()
-  const center = data.features?.[0]?.center
-  if (!center) {
-    return Response.json({ lat: 0, lng: 0 })
-  }
-
-  const [lng, lat] = center
-  return Response.json({ lat, lng })
 }
