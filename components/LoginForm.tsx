@@ -4,8 +4,8 @@ import Link from "next/link"
 import { useRouter, useSearchParams } from "next/navigation"
 import { useState } from "react"
 import { createClient } from "@/lib/supabase/client"
-
-type Role = "renter" | "realtor"
+import { categorizeAuthError } from "@/lib/auth/errors"
+import { LoginPayloadSchema, type Role } from "@/schemas/auth"
 
 export function LoginForm() {
   const router = useRouter()
@@ -20,22 +20,32 @@ export function LoginForm() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError(null)
+
+    const parsed = LoginPayloadSchema.safeParse({ email, password, role })
+    if (!parsed.success) {
+      setError(parsed.error.issues[0]?.message ?? "Please check your input.")
+      return
+    }
+
     setLoading(true)
-
     const supabase = createClient()
-    const { data, error } = await supabase.auth.signInWithPassword({ email, password })
+    const { data, error: authError } = await supabase.auth.signInWithPassword({
+      email: parsed.data.email,
+      password: parsed.data.password,
+    })
 
-    if (error) {
-      setError(error.message)
+    if (authError) {
+      const categorized = categorizeAuthError(authError)
+      setError(categorized.message)
       setLoading(false)
       return
     }
 
-    const userRole = data.user?.user_metadata?.["role"]
+    const userRole = data.user.user_metadata?.["role"]
 
     // If the user picked "I'm a realtor" in the UI but this account isn't a
     // realtor account, tell them — don't silently redirect to the renter flow.
-    if (role === "realtor" && userRole !== "realtor") {
+    if (parsed.data.role === "realtor" && userRole !== "realtor") {
       setError("This account is not registered as a realtor. Please sign up for a realtor account.")
       setLoading(false)
       return

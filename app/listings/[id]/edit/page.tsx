@@ -27,5 +27,5 @@ export default async function EditListingPage({ params }: Props) {
 
   if (!data) redirect("/profile")
 
-  return <AddListingForm initialData={data as RealtorListingRow} />
+  return <AddListingForm user={user} initialData={data as RealtorListingRow} />
 }
