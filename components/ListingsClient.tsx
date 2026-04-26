@@ -1,13 +1,8 @@
 "use client"
 
-import { useState, useMemo } from "react"
-import {
-  type Listing,
-  type FilterState,
-  DEFAULT_FILTERS,
-  countActiveFilters,
-  filterAndSortListings,
-} from "@/types"
+import { useMemo, useState } from "react"
+import { type Listing, type FilterState, countActiveFilters, filterAndSortListings } from "@/types"
+import { useFilterState } from "@/features/listings-browse/use-filter-state"
 import { ListingCard } from "./ListingCard"
 import { FilterSidebar } from "./FilterSidebar"
 import { FilterBar } from "./FilterBar"
@@ -22,20 +17,10 @@ const ListingsBrowseMap = dynamic(() => import("./ListingsBrowseMap"), {
 
 type Props = {
   initialListings: Listing[]
-  initialQuery: string
-  initialListingType?: "rent" | "sale"
 }
 
-export function ListingsClient({
-  initialListings,
-  initialQuery,
-  initialListingType = "rent",
-}: Props) {
-  const [filters, setFilters] = useState<FilterState>({
-    ...DEFAULT_FILTERS,
-    search: initialQuery,
-    listingType: initialListingType,
-  })
+export function ListingsClient({ initialListings }: Props) {
+  const { filters, setFilters, clearFilters } = useFilterState()
   const [mobileFilterOpen, setMobileFilterOpen] = useState(false)
   const [view, setView] = useState<"grid" | "reels">("grid")
 
@@ -48,10 +33,9 @@ export function ListingsClient({
 
   const activeCount = countActiveFilters(filters)
 
-  const handleChange = (partial: Partial<FilterState>) =>
-    setFilters((prev) => ({ ...prev, ...partial }))
+  const handleChange = (partial: Partial<FilterState>) => setFilters(partial)
 
-  const clearAll = () => setFilters(DEFAULT_FILTERS)
+  const clearAll = () => clearFilters()
 
   return (
     <div className="min-h-screen bg-gray-50">
