@@ -7,6 +7,13 @@ import { useRouter } from "next/navigation"
 import type { User } from "@supabase/supabase-js"
 import { createClient } from "@/lib/supabase/client"
 import { NYC_BOROUGHS } from "@/data/nyc-neighborhoods"
+import { contentHashFilename } from "@/lib/storage/content-hash"
+import { probeVideo } from "@/lib/storage/probe-video"
+import {
+  uploadFilesWithRollback,
+  type RemoveFn,
+  type UploadFn,
+} from "@/lib/storage/upload-pipeline"
 import type { RealtorListingRow, OpenHouseSlot } from "@/types"
 
 // ── Local types ────────────────────────────────────────────────────────────────
@@ -377,6 +384,10 @@ export function AddListingForm({ initialData }: { initialData?: RealtorListingRo
   const [loading, setLoading] = useState(false)
   const [coords, setCoords] = useState({ lat: initialData?.lat ?? 0, lng: initialData?.lng ?? 0 })
   const [geoStatus, setGeoStatus] = useState<"idle" | "loading" | "found" | "error">("idle")
+  // Reels render at 9:16. We probe the chosen video and surface a soft
+  // warning if the aspect is off so the realtor can decide to re-export —
+  // not blocking, matching the previous "warn, don't enforce" behavior.
+  const [videoAspectWarning, setVideoAspectWarning] = useState<string | null>(null)
 
   // Auth check — use getSession() (reads cached session) so user_metadata.role
   // is always present immediately after sign-up, unlike getUser() which makes
@@ -492,39 +503,69 @@ export function AddListingForm({ initialData }: { initialData?: RealtorListingRo
     overrideStatus?: FormState["status"],
     overrideCoords?: { lat: number; lng: number },
   ) => {
-    const newPhotoUrls = await Promise.all(
-      photoFiles.map(async (file, i) => {
-        const ext = file.name.split(".").pop() ?? "jpg"
-        const path = `${user!.id}/${Date.now()}-${i}.${ext}`
-        const { error: uploadErr } = await supabase.storage
-          .from("listing-photos")
-          .upload(path, file, { upsert: true })
-        if (uploadErr) throw new Error(`Photo upload failed: ${uploadErr.message}`)
-        return supabase.storage.from("listing-photos").getPublicUrl(path).data.publicUrl
-      }),
-    )
-    const allPhotoUrls = [...existingPhotoUrls, ...newPhotoUrls]
+    const userId = user!.id
 
+    // Bucket-scoped Supabase adapters that satisfy the upload-pipeline's
+    // injectable contract — the pipeline owns retry + rollback semantics
+    // and stays Supabase-agnostic.
+    const supabaseUpload =
+      (bucket: string): UploadFn =>
+      async (file, path) => {
+        const { error: uploadErr } = await supabase.storage
+          .from(bucket)
+          .upload(path, file, { upsert: true })
+        if (uploadErr) return { kind: "error", message: uploadErr.message }
+        const publicUrl = supabase.storage.from(bucket).getPublicUrl(path).data.publicUrl
+        return { kind: "ok", publicUrl }
+      }
+    const supabaseRemove =
+      (bucket: string): RemoveFn =>
+      async (path) => {
+        await supabase.storage.from(bucket).remove([path])
+      }
+    const userScopedHashPath = async (file: File): Promise<string> =>
+      `${userId}/${await contentHashFilename(file)}`
+
+    // Photos — parallel with retry + rollback within the photo bucket.
+    const photoResult = await uploadFilesWithRollback({
+      files: photoFiles,
+      pathFor: userScopedHashPath,
+      upload: supabaseUpload("listing-photos"),
+      remove: supabaseRemove("listing-photos"),
+    })
+    if (photoResult.kind !== "ok") {
+      throw new Error(`Photo upload failed: ${photoResult.message}`)
+    }
+    const allPhotoUrls = [...existingPhotoUrls, ...photoResult.publicUrls]
+
+    // Video + floor plan — same pipeline, single-element batches give us
+    // free retry + a no-op rollback boundary.
     let videoUrl: string | null = initialData?.video_url ?? null
     if (videoFile) {
-      const ext = videoFile.name.split(".").pop() ?? "mp4"
-      const path = `${user!.id}/${Date.now()}-video.${ext}`
-      const { error: uploadErr } = await supabase.storage
-        .from("listing-videos")
-        .upload(path, videoFile, { upsert: true })
-      if (uploadErr) throw new Error(`Video upload failed: ${uploadErr.message}`)
-      videoUrl = supabase.storage.from("listing-videos").getPublicUrl(path).data.publicUrl
+      const r = await uploadFilesWithRollback({
+        files: [videoFile],
+        pathFor: userScopedHashPath,
+        upload: supabaseUpload("listing-videos"),
+        remove: supabaseRemove("listing-videos"),
+      })
+      if (r.kind !== "ok" || !r.publicUrls[0]) {
+        throw new Error(`Video upload failed: ${r.kind === "ok" ? "no url" : r.message}`)
+      }
+      videoUrl = r.publicUrls[0]
     }
 
     let floorPlanUrl: string | null = initialData?.floor_plan_url ?? null
     if (floorPlanFile) {
-      const ext = floorPlanFile.name.split(".").pop() ?? "pdf"
-      const path = `${user!.id}/${Date.now()}-floor-plan.${ext}`
-      const { error: uploadErr } = await supabase.storage
-        .from("listing-floor-plans")
-        .upload(path, floorPlanFile, { upsert: true })
-      if (uploadErr) throw new Error(`Floor plan upload failed: ${uploadErr.message}`)
-      floorPlanUrl = supabase.storage.from("listing-floor-plans").getPublicUrl(path).data.publicUrl
+      const r = await uploadFilesWithRollback({
+        files: [floorPlanFile],
+        pathFor: userScopedHashPath,
+        upload: supabaseUpload("listing-floor-plans"),
+        remove: supabaseRemove("listing-floor-plans"),
+      })
+      if (r.kind !== "ok" || !r.publicUrls[0]) {
+        throw new Error(`Floor plan upload failed: ${r.kind === "ok" ? "no url" : r.message}`)
+      }
+      floorPlanUrl = r.publicUrls[0]
     }
 
     const amenities = deriveAmenities(form)
@@ -697,6 +738,10 @@ export function AddListingForm({ initialData }: { initialData?: RealtorListingRo
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong. Please try again.")
       setLoading(false)
+    } finally {
+      // Always release the in-flight flag — on the happy path this runs
+      // before /profile mounts and unmounts this component; on cancelled
+      // navigations it prevents the form from getting stuck locked.
       isSubmitting.current = false
     }
   }
@@ -1272,14 +1317,32 @@ export function AddListingForm({ initialData }: { initialData?: RealtorListingRo
                   if (f && f.size > 200 * 1024 * 1024) {
                     setError("Video exceeds 200MB. Please compress it before uploading.")
                     e.target.value = ""
-                  } else {
-                    setVideoFile(f)
-                    setError(null)
+                    return
+                  }
+                  setVideoFile(f)
+                  setVideoAspectWarning(null)
+                  setError(null)
+                  if (f) {
+                    void probeVideo(f).then((result) => {
+                      if (result.kind !== "ok") return
+                      if (result.probe.aspect !== "9-16") {
+                        setVideoAspectWarning(
+                          `Heads up: this video is ${result.probe.width}×${result.probe.height} (${result.probe.aspect}). Reels play at 9:16 — it'll still upload, but it may letterbox.`,
+                        )
+                      }
+                    })
                   }
                   e.target.value = ""
                 }}
               />
-              <p className="mt-1 text-xs text-gray-400">MP4, MOV, WEBM · Warn if &gt;200MB</p>
+              <p className="mt-1 text-xs text-gray-400">
+                MP4, MOV, WEBM · 9:16 plays best · &le;200MB
+              </p>
+              {videoAspectWarning && (
+                <p className="mt-2 rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-800">
+                  {videoAspectWarning}
+                </p>
+              )}
             </div>
 
             <div>
