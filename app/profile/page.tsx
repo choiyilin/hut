@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation"
 import { useEffect, useState } from "react"
 import type { User } from "@supabase/supabase-js"
 import { createClient } from "@/lib/supabase/client"
-import { useSaved } from "@/contexts/SavedContext"
+import { useSaved } from "@/features/saved"
 import { AppNav } from "@/components/AppNav"
 import type { RealtorListingRow } from "@/types"
 

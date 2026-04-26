@@ -3,7 +3,7 @@
 import { useRef, useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import type { Listing } from "@/types"
-import { useSaved } from "@/contexts/SavedContext"
+import { useSaved } from "@/features/saved"
 
 function ReelSlide({ listing, index }: { listing: Listing; index: number }) {
   const videoRef = useRef<HTMLVideoElement>(null)

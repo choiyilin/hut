@@ -4,7 +4,7 @@ import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useEffect, useState } from "react"
 import { createClient } from "@/lib/supabase/client"
-import { useSaved } from "@/contexts/SavedContext"
+import { useSaved } from "@/features/saved"
 
 export function AppNav() {
   const router = useRouter()

@@ -1,7 +1,7 @@
 import type { Metadata } from "next"
 import { Playfair_Display, Plus_Jakarta_Sans } from "next/font/google"
 import Script from "next/script"
-import { SavedProvider } from "@/contexts/SavedContext"
+import { SavedProvider } from "@/features/saved"
 import "./globals.css"
 
 // Logo only — kept separate so the serif can stay isolated to the logo mark
