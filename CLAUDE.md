@@ -1,71 +1,134 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+Guidance for Claude Code when working in this repository.
 
 ## Commands
 
 ```bash
-npm run dev      # Start dev server (Turbopack) at localhost:3000
-npm run build    # Production build
-npm run lint     # ESLint (no test suite exists)
+pnpm dev          # Dev server (Turbopack) at localhost:3000
+pnpm build        # Production build
+pnpm typecheck    # tsc --noEmit, strictest TS settings
+pnpm lint         # ESLint flat config (zero warnings tolerated)
+pnpm format       # Prettier --write
+pnpm test         # Vitest watch mode
+pnpm test:run     # Vitest one-shot (CI mode)
+pnpm e2e          # Playwright (auto-starts pnpm dev)
 ```
 
-No tests are configured in this project.
+Mutation testing runs weekly in CI (`stryker.config.mjs`); locally: `pnpm exec stryker run`.
 
 ## Environment
 
-Requires `.env.local` with:
+`.env.local` must define:
+
 ```
 NEXT_PUBLIC_SUPABASE_URL=
 NEXT_PUBLIC_SUPABASE_ANON_KEY=
+NEXT_PUBLIC_MAPBOX_TOKEN=
 ```
 
-## Architecture
+All `process.env.X` reads must go through `src/env/client.ts` (public) or `src/env/server.ts` (server-only) — both Zod-validated at startup. Direct `process.env` access outside `src/env/` is banned by ESLint.
 
-**HUT** is a Next.js 16 (App Router) NYC rental listings app with Supabase auth and a dual data source.
+## Stack
 
-### Data flow
+- Next.js 16 (App Router, React 19, Turbopack)
+- TypeScript 5 (strictest mode: `noUncheckedIndexedAccess`, `exactOptionalPropertyTypes`, `verbatimModuleSyntax`, `noPropertyAccessFromIndexSignature`)
+- Supabase (Postgres + Auth + Storage)
+- Mapbox GL + react-map-gl
+- Zod 4 (schema-first at every trust boundary; types via `z.infer`)
+- Zustand (client state, replaces SavedContext)
+- Tailwind v4 (CSS-based config in `app/globals.css`)
+- Vitest 4 + jsdom + Testing Library + Playwright
+- pnpm 10 + Node 22
 
-Listings come from two sources merged in `app/listings/page.tsx` (server component):
-1. `data/listings.json` — 25 static mock listings (cast as `Listing[]`)
-2. `realtor_listings` Supabase table — realtor-submitted listings, fetched server-side and mapped via `realtorRowToListing()` in `types/index.ts`
+## Directory layout
 
-All filter/sort logic runs client-side in `ListingsClient` using `filterAndSortListings()` from `types/index.ts`. The types file is the single source of truth for the `Listing` interface, `FilterState`, and filter logic.
+```
+hut/
+├── app/                          Next.js routes — thin shells, delegate to features/lib
+│   ├── api/geocode/              Typed Mapbox adapter behind a route
+│   ├── listings/, profile/, saved/, auth/
+│   └── …
+├── components/                   React components (mostly client)
+│   ├── AddListingForm.tsx        Big realtor form; uses src/lib/storage helpers
+│   ├── ListingsBrowseMap.tsx     Map; uses src/domain/map-fit
+│   ├── LoginForm.tsx, SignupForm.tsx   On Zod schemas + auth-error mapper
+│   └── …
+├── src/
+│   ├── env/                      Zod-validated env. ONLY place process.env is read.
+│   ├── schemas/                  Zod source-of-truth; types via z.infer
+│   │   ├── listing.ts            Listing
+│   │   ├── realtor-listing-row.ts  Mirrors DB row exactly (snake_case)
+│   │   ├── filter-state.ts       FilterState + DEFAULT_FILTERS
+│   │   ├── auth.ts               Login/Signup payloads
+│   │   └── open-house-slot.ts
+│   ├── domain/                   Pure logic — zero framework imports
+│   │   ├── filter.ts             filterAndSortListings, countActiveFilters
+│   │   ├── filter-url.ts         encode/decode FilterState ↔ URLSearchParams
+│   │   ├── neighborhoods.ts      parent↔sub mapping
+│   │   ├── amenities.ts          deriveAmenities
+│   │   ├── realtor-row-to-listing.ts
+│   │   └── map-fit.ts            pickFitTarget, geoListings
+│   ├── lib/                      Adapters to external systems
+│   │   ├── supabase/             client.ts, server.ts, queries/listings.ts
+│   │   ├── mapbox/               geocode.ts (LRU cache, rate limit, AbortSignal)
+│   │   ├── storage/              content-hash, aspect, probe-video, upload-pipeline
+│   │   └── auth/                 errors.ts (categorizeAuthError)
+│   └── features/                 Vertical slices
+│       ├── saved/                Zustand store + storage adapter + provider/useSaved
+│       └── listings-browse/      useFilterState (URL-driven)
+├── tests/
+│   ├── e2e/                      Playwright smoke tests
+│   ├── fixtures/                 Factory functions
+│   └── setup.ts                  Vitest setup (jsdom + Storage shim)
+├── supabase/migrations/          SQL migrations (RLS lives here)
+└── .github/workflows/            ci.yml, e2e.yml, mutation.yml
+```
+
+## Conventions
+
+### Imports
+- Always use `@/…` alias (resolves to repo root).
+- Schemas → `@/schemas/<name>`. Domain logic → `@/domain/<name>`. External adapters → `@/lib/<area>/<name>`. Features → `@/features/<slice>`.
+- Never re-export through a barrel. Direct imports keep tree-shaking honest.
+
+### Types
+- All trust-boundary types (HTTP, DB, localStorage, env) come from a Zod schema; types are `z.infer` outputs. Never hand-write a type that mirrors a schema.
+- No `any`, no non-`as const` casts, no non-null assertions, no `@ts-ignore` — all banned by ESLint. Use `unknown` and Zod-narrow.
+- Errors use discriminated unions (`{ kind: "ok" | "error", … }`) instead of throws at adapter boundaries.
+
+### Testing
+- TDD when adding logic to `src/`. Coverage gates: 100% on schemas/domain/lib; 85/75 on features.
+- Tests must hit the public API only — no peeking at private state. Pure helpers extracted from React components are the testable layer.
+- For DOM-touching code (jsdom 29 + vitest 4 quirk), `tests/setup.ts` bridges `globalThis.localStorage` to jsdom's real Storage.
 
 ### Auth roles
+- Two roles in `user_metadata.role`: `renter` (default) and `realtor`.
+- Role gates are server-side in App Router pages. `/profile` and `/listings/new` redirect to `/login` if the role is wrong; the matching client component receives `user` as a validated prop.
 
-Two user roles stored in Supabase `user_metadata.role`:
-- **Default (renter)**: can save listings (heart toggle), view saved page, see profile stats
-- **`realtor`**: can post listings via `/listings/new` (AddListingForm → `realtor_listings` table), manage/delete their own listings from profile
-
-Auth flow: Supabase email/password + magic link → `app/auth/callback/route.ts` exchanges code for session → redirects to `/listings`.
+### URL-as-state
+- Browse filters live in the URL via `useFilterState()` (`src/features/listings-browse`). Parsing/serialization is pure (`src/domain/filter-url.ts`) and only fields that differ from defaults are emitted.
 
 ### Saved listings
+- `useSaved()` from `@/features/saved` returns `{ savedIds, toggleSaved, isSaved }`. The store stays in `loading` until Supabase auth resolves; toggles during loading land in a `pendingDelta` and XOR-merge onto the loaded set.
 
-`SavedContext` (wraps entire app in `layout.tsx`) persists saved listing IDs to `localStorage` keyed by user ID (`hut_saved_{userId}` or `hut_saved_anon`). Reloads on auth state change so saved state follows the logged-in user.
+### Storage uploads (realtor form)
+- Filenames are SHA-256 content hashes (`src/lib/storage/content-hash.ts`).
+- Uploads run in parallel with retry + rollback (`src/lib/storage/upload-pipeline.ts`).
+- Videos get probed for 9:16 aspect (`src/lib/storage/probe-video.ts`); non-9:16 surfaces a soft amber warning, doesn't block.
 
-### Supabase client helpers
-
-- `lib/supabase/client.ts` — browser client (use in `'use client'` components)
-- `lib/supabase/server.ts` — async server client using `next/headers` cookies (use in server components and route handlers)
-- `proxy.ts` — Next.js 16 proxy (replaces `middleware.ts`); refreshes Supabase session cookies on every request
+### Map
+- Markers render off `geoListings(listings)` (drops 0,0). Camera fits via `pickFitTarget()` debounced 220ms. Selection survives unrelated filter changes.
 
 ### Styling
+- Tailwind v4 CSS config in `app/globals.css` under `@theme inline {}` (no `tailwind.config.ts`).
+- Brand: `--color-gold: #c9a96e`, `--color-cream: #f0e9dc`. Fonts: `font-playfair` (logo only), `font-sans` = Plus Jakarta Sans.
 
-Tailwind v4 with CSS-based config — all theme customization is in `app/globals.css` under `@theme inline {}`. No `tailwind.config.ts`.
+## When adding a new DB column to `realtor_listings`
 
-Key tokens:
-- `--color-gold: #c9a96e` → `text-gold`, `bg-gold`, `bg-gold/10`
-- `--color-cream: #f0e9dc`
-- Fonts: `font-playfair` (logo only), `font-sans` = Plus Jakarta Sans (primary UI)
-- Icons: Font Awesome 6.5 loaded via CDN in `app/layout.tsx`
+Update three places:
+1. `src/schemas/realtor-listing-row.ts` — extend the Zod schema.
+2. `src/domain/realtor-row-to-listing.ts` — map it onto `Listing` if user-visible.
+3. `components/AddListingForm.tsx` — add the form field + payload mapping.
 
-The landing page (`app/page.tsx`) uses `page.module.css` for CSS Modules alongside Tailwind — necessary for the video crossfade hero animation.
-
-### `next/image` remote patterns
-
-Configured in `next.config.ts` for `picsum.photos` (mock listing images) and `*.supabase.co` (realtor-uploaded photos from Supabase Storage).
-
-### Key type: `RealtorListingRow`
-
-The `realtor_listings` DB table has snake_case columns with many boolean amenity flags (`has_gym`, `has_doorman`, etc.) not present on the `Listing` interface. `realtorRowToListing()` in `types/index.ts` maps between them. When adding new DB columns, update both `RealtorListingRow` and `realtorRowToListing()`.
+The Zod schema is the source of truth — TypeScript types update via `z.infer` automatically.

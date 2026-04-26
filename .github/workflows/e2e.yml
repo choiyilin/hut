@@ -1,14 +1,19 @@
 name: E2E
 
-# Phase 0 ships this as manual-only. Phase 7 wires it to PR previews so every
-# PR gets golden-path coverage against its Vercel preview deploy.
 on:
+  pull_request: {}
+  push:
+    branches: [main]
   workflow_dispatch:
     inputs:
       base_url:
         description: "Base URL to test against (defaults to local dev server with placeholder env)"
         required: false
         type: string
+
+concurrency:
+  group: e2e-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   e2e:

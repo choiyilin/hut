@@ -1,4 +1,4 @@
-import type { Listing } from "@/types"
+import type { Listing } from "@/schemas/listing"
 import listingsData from "@/data/listings.json"
 import { ListingsClient } from "@/components/ListingsClient"
 import { geocode } from "@/lib/mapbox/geocode"

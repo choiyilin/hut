@@ -6,7 +6,7 @@ import type { User } from "@supabase/supabase-js"
 import { createClient } from "@/lib/supabase/client"
 import { useSaved } from "@/features/saved"
 import { AppNav } from "@/components/AppNav"
-import type { RealtorListingRow } from "@/types"
+import type { RealtorListingRow } from "@/schemas/realtor-listing-row"
 
 type Props = {
   user: User

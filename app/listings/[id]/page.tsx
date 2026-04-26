@@ -1,7 +1,8 @@
 import { notFound } from "next/navigation"
 import listingsData from "@/data/listings.json"
-import type { Listing } from "@/types"
-import { realtorRowToListing, type RealtorListingRow } from "@/types"
+import type { Listing } from "@/schemas/listing"
+import type { RealtorListingRow } from "@/schemas/realtor-listing-row"
+import { realtorRowToListing } from "@/domain/realtor-row-to-listing"
 import { ListingDetail } from "@/components/ListingDetail"
 import { createClient } from "@/lib/supabase/server"
 

@@ -20,6 +20,8 @@ export default defineConfig([
     "postcss.config.mjs",
     "next.config.ts",
     "commitlint.config.mjs",
+    "stryker.config.mjs",
+    "reports/**",
   ]),
 
   js.configs.recommended,

@@ -7,7 +7,7 @@ import "mapbox-gl/dist/mapbox-gl.css"
 
 import { clientEnv } from "@/env/client"
 import { geoListings as filterGeoListings, pickFitTarget } from "@/domain/map-fit"
-import type { Listing } from "@/types"
+import type { Listing } from "@/schemas/listing"
 
 const NYC_BOUNDS: [[number, number], [number, number]] = [
   [-74.259, 40.477],

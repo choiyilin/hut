@@ -4,7 +4,7 @@ import Link from "next/link"
 import { AppNav } from "@/components/AppNav"
 import { ListingCard } from "@/components/ListingCard"
 import { useSaved } from "@/features/saved"
-import type { Listing } from "@/types"
+import type { Listing } from "@/schemas/listing"
 
 type Props = {
   allListings: Listing[]

@@ -1,7 +1,9 @@
 "use client"
 
 import { useMemo, useState } from "react"
-import { type Listing, type FilterState, countActiveFilters, filterAndSortListings } from "@/types"
+import type { Listing } from "@/schemas/listing"
+import type { FilterState } from "@/schemas/filter-state"
+import { countActiveFilters, filterAndSortListings } from "@/domain/filter"
 import { useFilterState } from "@/features/listings-browse/use-filter-state"
 import { ListingCard } from "./ListingCard"
 import { FilterSidebar } from "./FilterSidebar"
