@@ -3,7 +3,7 @@
 import Link from "next/link"
 import { AppNav } from "@/components/AppNav"
 import { ListingCard } from "@/components/ListingCard"
-import { useSaved } from "@/contexts/SavedContext"
+import { useSaved } from "@/features/saved"
 import type { Listing } from "@/types"
 
 type Props = {

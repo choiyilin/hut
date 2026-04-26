@@ -3,7 +3,7 @@
 import Image from "next/image"
 import Link from "next/link"
 import type { Listing } from "@/types"
-import { useSaved } from "@/contexts/SavedContext"
+import { useSaved } from "@/features/saved"
 
 type Props = {
   listing: Listing

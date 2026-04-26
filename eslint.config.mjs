@@ -116,6 +116,8 @@ export default defineConfig([
   // construct invalid fixtures (e.g. `as never`, fake clients with `unknown
   // as ClientType`) to exercise validation paths and stub external systems.
   // Production code stays strict; tests prove the strict code rejects garbage.
+  // Async fakes also frequently lack `await` — they exist to satisfy a
+  // `Promise`-returning interface, not to do real async work.
   {
     files: ["tests/**/*.{ts,tsx}", "src/**/*.{test,spec}.{ts,tsx}"],
     rules: {
@@ -126,6 +128,12 @@ export default defineConfig([
       "@typescript-eslint/no-unsafe-call": "off",
       "@typescript-eslint/no-unsafe-member-access": "off",
       "@typescript-eslint/no-unsafe-return": "off",
+      "@typescript-eslint/require-await": "off",
+      "@typescript-eslint/unbound-method": "off",
+      // Tests intentionally race against mutable flags / promise resolution
+      // (e.g. `while (!flagSetByMockSave) await tick()`) — TS narrows the
+      // initial literal value but the mutation is real.
+      "@typescript-eslint/no-unnecessary-condition": "off",
     },
   },
 
