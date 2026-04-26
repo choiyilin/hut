@@ -352,12 +352,16 @@ function CheckboxField({
 
 // ── Main component ─────────────────────────────────────────────────────────────
 
-export function AddListingForm({ initialData }: { initialData?: RealtorListingRow }) {
+export function AddListingForm({
+  user,
+  initialData,
+}: {
+  user: User
+  initialData?: RealtorListingRow
+}) {
   const isEditMode = !!initialData
   const isDraft = isEditMode && initialData?.status === "draft"
   const router = useRouter()
-  const [user, setUser] = useState<User | null>(null)
-  const [authLoading, setAuthLoading] = useState(true)
 
   const [form, setForm] = useState<FormState>(
     initialData ? rowToFormState(initialData) : INITIAL_FORM,
@@ -389,20 +393,9 @@ export function AddListingForm({ initialData }: { initialData?: RealtorListingRo
   // not blocking, matching the previous "warn, don't enforce" behavior.
   const [videoAspectWarning, setVideoAspectWarning] = useState<string | null>(null)
 
-  // Auth check — use getSession() (reads cached session) so user_metadata.role
-  // is always present immediately after sign-up, unlike getUser() which makes
-  // a network call that can return stale metadata on freshly-created accounts.
-  useEffect(() => {
-    const supabase = createClient()
-    supabase.auth.getUser().then(({ data: { user }, error }) => {
-      if (error || !user || user.user_metadata?.["role"] !== "realtor") {
-        router.replace("/login")
-        return
-      }
-      setUser(user)
-      setAuthLoading(false)
-    })
-  }, [router])
+  // Auth + role gate moved to the server in /listings/new and /listings/[id]/edit
+  // — `user` is guaranteed authenticated and `user.user_metadata.role === "realtor"`
+  // by the time this component renders. Client-side state for that flag is gone.
 
   // Auto-compose title from street address + unit
   useEffect(() => {
@@ -503,7 +496,7 @@ export function AddListingForm({ initialData }: { initialData?: RealtorListingRo
     overrideStatus?: FormState["status"],
     overrideCoords?: { lat: number; lng: number },
   ) => {
-    const userId = user!.id
+    const userId = user.id
 
     // Bucket-scoped Supabase adapters that satisfy the upload-pipeline's
     // injectable contract — the pipeline owns retry + rollback semantics
@@ -682,7 +675,7 @@ export function AddListingForm({ initialData }: { initialData?: RealtorListingRo
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!user || isSubmitting.current) return
+    if (isSubmitting.current) return
     const hasPhotos = existingPhotoUrls.length > 0 || photoFiles.length > 0
     if (!hasPhotos) {
       setError("Please add at least one photo before posting.")
@@ -749,7 +742,7 @@ export function AddListingForm({ initialData }: { initialData?: RealtorListingRo
   // ── Save as draft ──────────────────────────────────────────────────────────
 
   const handleSaveDraft = async () => {
-    if (!user || isSubmitting.current) return
+    if (isSubmitting.current) return
     isSubmitting.current = true
     setError(null)
     setLoading(true)
@@ -791,8 +784,6 @@ export function AddListingForm({ initialData }: { initialData?: RealtorListingRo
       isSubmitting.current = false
     }
   }
-
-  if (authLoading) return <div className="min-h-screen bg-[#f0e9dc]" />
 
   const today = new Date().toISOString().slice(0, 10)
 

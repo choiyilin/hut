@@ -25,8 +25,16 @@ export async function proxy(request: NextRequest) {
     },
   )
 
-  // Refresh session — required by @supabase/ssr to keep cookies in sync
-  await supabase.auth.getSession()
+  // Refresh session — required by @supabase/ssr to keep cookies in sync.
+  // We deliberately ignore the result; the side effect (refreshed cookies on
+  // `supabaseResponse`) is the entire point. A try/catch keeps a Supabase
+  // outage from 500-ing every request — the page below still serves with
+  // whatever cookies the client already had.
+  try {
+    await supabase.auth.getSession()
+  } catch {
+    // intentional — the session-refresh failure doesn't block the request
+  }
 
   return supabaseResponse
 }

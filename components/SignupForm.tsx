@@ -4,8 +4,8 @@ import Link from "next/link"
 import { useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { createClient } from "@/lib/supabase/client"
-
-type Role = "renter" | "realtor"
+import { categorizeAuthError } from "@/lib/auth/errors"
+import { SignupPayloadSchema, type Role } from "@/schemas/auth"
 
 export function SignupForm() {
   const router = useRouter()
@@ -23,28 +23,30 @@ export function SignupForm() {
     e.preventDefault()
     setError(null)
 
-    if (password !== confirm) {
-      setError("Passwords do not match.")
+    const parsed = SignupPayloadSchema.safeParse({ email, password, confirm, role })
+    if (!parsed.success) {
+      setError(parsed.error.issues[0]?.message ?? "Please check your input.")
       return
     }
 
     setLoading(true)
     const supabase = createClient()
-    const { data, error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: { data: { role } },
+    const { data, error: authError } = await supabase.auth.signUp({
+      email: parsed.data.email,
+      password: parsed.data.password,
+      options: { data: { role: parsed.data.role } },
     })
 
-    if (error) {
-      setError(error.message)
+    if (authError) {
+      const categorized = categorizeAuthError(authError)
+      setError(categorized.message)
       setLoading(false)
       return
     }
 
     // When email confirmation is disabled in Supabase, signUp returns a session immediately.
     if (data.session) {
-      router.push(role === "realtor" ? "/profile" : "/listings")
+      router.push(parsed.data.role === "realtor" ? "/profile" : "/listings")
       router.refresh()
       return
     }
