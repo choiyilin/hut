@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation"
 import { createClient } from "@/lib/supabase/server"
 import { AddListingForm } from "@/components/AddListingForm"
-import type { RealtorListingRow } from "@/types"
+import type { RealtorListingRow } from "@/schemas/realtor-listing-row"
 
 type Props = {
   params: Promise<{ id: string }>

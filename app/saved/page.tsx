@@ -1,7 +1,9 @@
 import listingsData from "@/data/listings.json"
 import { SavedClient } from "@/components/SavedClient"
 import { createClient } from "@/lib/supabase/server"
-import { realtorRowToListing, type Listing, type RealtorListingRow } from "@/types"
+import type { Listing } from "@/schemas/listing"
+import type { RealtorListingRow } from "@/schemas/realtor-listing-row"
+import { realtorRowToListing } from "@/domain/realtor-row-to-listing"
 
 export default async function SavedPage() {
   let realtorRows: RealtorListingRow[] = []

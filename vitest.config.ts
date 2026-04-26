@@ -16,11 +16,19 @@ export default defineConfig({
       include: ["src/**/*.{ts,tsx}"],
       exclude: ["src/**/*.{test,spec}.{ts,tsx}", "src/**/__tests__/**", "src/**/*.d.ts"],
       thresholds: {
-        // Phase 1+2: enforce 100% on the structures of truth and their adapters.
-        // Phase 7 adds features/* and app/* tiers.
+        // 100% on the structures of truth (Zod schemas), their pure
+        // transforms (domain), and their adapters to external systems
+        // (lib). These are where bugs hurt most and tests are cheapest.
         "src/schemas/**": { lines: 100, branches: 100, functions: 100, statements: 100 },
         "src/domain/**": { lines: 100, branches: 100, functions: 100, statements: 100 },
         "src/lib/**": { lines: 100, branches: 100, functions: 100, statements: 100 },
+        // Features mix React + integrations. We cover the testable core
+        // (stores, hooks, pure helpers) at 100%; the gap is real third-
+        // party integration code (e.g. defaultAuthResolver wrapping the
+        // Supabase auth SDK) where unit-mocking the SDK provides little
+        // signal. 85/75 catches significant new gaps without forcing
+        // shallow tests for them.
+        "src/features/**": { lines: 85, branches: 75, functions: 80, statements: 85 },
       },
     },
   },

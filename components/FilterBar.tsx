@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect, useRef } from "react"
-import type { FilterState, BedFilter, BathFilter } from "@/types"
+import type { FilterState, BedFilter, BathFilter } from "@/schemas/filter-state"
 import { BED_OPTIONS, BATH_OPTIONS, PRICE_PRESETS } from "./FilterSidebar"
 import { NeighborhoodPicker } from "./NeighborhoodPicker"
 

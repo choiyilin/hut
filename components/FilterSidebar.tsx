@@ -1,5 +1,5 @@
-import type { FilterState, BedFilter, BathFilter } from "@/types"
-import { countActiveFilters } from "@/types"
+import type { FilterState, BedFilter, BathFilter } from "@/schemas/filter-state"
+import { countActiveFilters } from "@/domain/filter"
 import { NeighborhoodPicker } from "./NeighborhoodPicker"
 
 // ── Static data ───────────────────────────────────────────────────────────────

@@ -14,7 +14,8 @@ import {
   type RemoveFn,
   type UploadFn,
 } from "@/lib/storage/upload-pipeline"
-import type { RealtorListingRow, OpenHouseSlot } from "@/types"
+import type { RealtorListingRow } from "@/schemas/realtor-listing-row"
+import type { OpenHouseSlot } from "@/schemas/open-house-slot"
 
 // ── Local types ────────────────────────────────────────────────────────────────
 

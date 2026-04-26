@@ -2,7 +2,7 @@
 
 import Image from "next/image"
 import Link from "next/link"
-import type { Listing } from "@/types"
+import type { Listing } from "@/schemas/listing"
 import { useSaved } from "@/features/saved"
 
 type Props = {

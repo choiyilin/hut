@@ -2,7 +2,7 @@
 
 import { useRef, useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
-import type { Listing } from "@/types"
+import type { Listing } from "@/schemas/listing"
 import { useSaved } from "@/features/saved"
 
 function ReelSlide({ listing, index }: { listing: Listing; index: number }) {
