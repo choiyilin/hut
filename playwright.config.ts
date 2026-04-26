@@ -1,9 +1,14 @@
 import { defineConfig, devices } from "@playwright/test"
 
-const PORT = process.env["PORT"] ?? "3000"
-const BASE_URL = process.env["PLAYWRIGHT_BASE_URL"] ?? `http://localhost:${PORT}`
+// Empty-string envs come back from GitHub Actions when an `inputs.*` variable
+// wasn't supplied — treat them as absent so we don't navigate to "".
+const nonEmpty = (value: string | undefined): string | undefined =>
+  value === undefined || value === "" ? undefined : value
+
+const PORT = nonEmpty(process.env["PORT"]) ?? "3000"
+const BASE_URL = nonEmpty(process.env["PLAYWRIGHT_BASE_URL"]) ?? `http://localhost:${PORT}`
 const isCI = Boolean(process.env["CI"])
-const useExistingServer = Boolean(process.env["PLAYWRIGHT_BASE_URL"])
+const useExistingServer = nonEmpty(process.env["PLAYWRIGHT_BASE_URL"]) !== undefined
 
 export default defineConfig({
   testDir: "./tests/e2e",
