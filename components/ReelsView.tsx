@@ -33,7 +33,15 @@ function ReelSlide({ listing, index }: { listing: Listing; index: number }) {
       ([entry]) => {
         if (!entry) return
         if (entry.isIntersecting) {
-          video.play().catch(() => undefined)
+          // Upgrade to full preload now that the slide is on-screen — keeps
+          // subsequent scroll-into-view slides from stuttering on the first
+          // few frames while the network catches up.
+          setPreload("auto")
+          // play() returns a Promise that rejects with AbortError if pause()
+          // races it (e.g. user scrolls fast). Swallow that — anything else
+          // is autoplay-blocked or a network failure, equally non-actionable
+          // from here.
+          void video.play().catch(() => undefined)
         } else {
           video.pause()
         }
@@ -46,6 +54,10 @@ function ReelSlide({ listing, index }: { listing: Listing; index: number }) {
     return () => {
       preloadObserver.disconnect()
       playObserver.disconnect()
+      // Stop playback explicitly: if a parent re-render orphans this slide
+      // mid-play, the `<video>` element survives in the DOM long enough for
+      // a stale audio-less frame to keep ticking until GC.
+      video.pause()
     }
   }, [])
 

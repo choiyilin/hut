@@ -5,11 +5,6 @@ import { geocode } from "@/lib/mapbox/geocode"
 import { createClient } from "@/lib/supabase/server"
 import { selectPublicListings } from "@/lib/supabase/queries/listings"
 
-// In Next.js 16, searchParams is a Promise
-type Props = {
-  searchParams: Promise<{ q?: string; type?: string; _r?: string }>
-}
-
 async function geocodeMissing(listings: readonly Listing[]): Promise<Listing[]> {
   return Promise.all(
     listings.map(async (listing) => {
@@ -26,10 +21,7 @@ async function geocodeMissing(listings: readonly Listing[]): Promise<Listing[]> 
   )
 }
 
-export default async function ListingsPage({ searchParams }: Props) {
-  const { q, type, _r } = await searchParams
-  const listingType: "rent" | "sale" = type === "sale" ? "sale" : "rent"
-
+export default async function ListingsPage() {
   const supabase = await createClient()
   const result = await selectPublicListings(supabase)
 
@@ -42,12 +34,5 @@ export default async function ListingsPage({ searchParams }: Props) {
   const merged: Listing[] = [...(listingsData as Listing[]), ...realtorListings]
   const allListings = await geocodeMissing(merged)
 
-  return (
-    <ListingsClient
-      key={_r ?? listingType}
-      initialListings={allListings}
-      initialQuery={q ?? ""}
-      initialListingType={listingType}
-    />
-  )
+  return <ListingsClient initialListings={allListings} />
 }

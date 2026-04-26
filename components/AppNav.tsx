@@ -45,18 +45,18 @@ export function AppNav() {
         </Link>
 
         <nav className="hidden items-center gap-0.5 md:flex">
-          <button
-            onClick={() => router.push(`/listings?type=rent&_r=${Date.now()}`)}
+          <Link
+            href="/listings?type=rent"
             className="rounded-lg px-3 py-2 text-sm text-gray-600 transition-colors hover:bg-gray-50 hover:text-gray-900"
           >
             Rent
-          </button>
-          <button
-            onClick={() => router.push(`/listings?type=sale&_r=${Date.now()}`)}
+          </Link>
+          <Link
+            href="/listings?type=sale"
             className="rounded-lg px-3 py-2 text-sm text-gray-600 transition-colors hover:bg-gray-50 hover:text-gray-900"
           >
             Buy
-          </button>
+          </Link>
         </nav>
 
         <div className="hidden flex-shrink-0 items-center gap-2 sm:flex">
