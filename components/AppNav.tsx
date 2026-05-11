@@ -60,22 +60,22 @@ export function AppNav() {
         </nav>
 
         <div className="hidden flex-shrink-0 items-center gap-2 sm:flex">
+          {/* Saved — visible to anonymous users too (saves persist in localStorage) */}
+          <Link
+            href="/saved"
+            className="flex items-center gap-1.5 rounded-full px-4 py-2 text-sm font-bold text-gray-700 transition-colors hover:bg-gray-100"
+          >
+            <i className="fa-regular fa-heart text-xs" />
+            Saved
+            {savedIds.size > 0 && (
+              <span className="flex h-5 w-5 items-center justify-center rounded-full bg-gray-900 text-[10px] font-extrabold text-white">
+                {savedIds.size}
+              </span>
+            )}
+          </Link>
+
           {userEmail ? (
             <>
-              {/* Saved */}
-              <Link
-                href="/saved"
-                className="flex items-center gap-1.5 rounded-full px-4 py-2 text-sm font-bold text-gray-700 transition-colors hover:bg-gray-100"
-              >
-                <i className="fa-regular fa-heart text-xs" />
-                Saved
-                {savedIds.size > 0 && (
-                  <span className="flex h-5 w-5 items-center justify-center rounded-full bg-gray-900 text-[10px] font-extrabold text-white">
-                    {savedIds.size}
-                  </span>
-                )}
-              </Link>
-
               {/* Divider */}
               <span className="h-5 w-px bg-gray-200" />
 

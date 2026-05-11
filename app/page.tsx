@@ -1,5 +1,6 @@
 import Link from "next/link"
 import { VideoStage } from "@/components/VideoStage"
+import { HomeAuthButton } from "@/components/HomeAuthButton"
 import styles from "./page.module.css"
 
 export default function HomePage() {
@@ -28,26 +29,10 @@ export default function HomePage() {
                 Buy <i className="fa-solid fa-plus" />
               </Link>
             </li>
-            <li>
-              <a href="#">
-                List <i className="fa-solid fa-plus" />
-              </a>
-            </li>
-            <li>
-              <a href="#">Agents</a>
-            </li>
-            <li>
-              <a href="#">
-                Featured <i className="fa-solid fa-plus" />
-              </a>
-            </li>
           </ul>
         </nav>
 
-        <Link href="/login" className={styles["btnAuth"]}>
-          <i className="fa-regular fa-user" />
-          Login&thinsp;/&thinsp;Sign up
-        </Link>
+        <HomeAuthButton />
       </header>
 
       {/* Hero */}
